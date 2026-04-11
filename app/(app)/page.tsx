@@ -11,8 +11,11 @@ import {
   ALL_LEAGUES_ID,
   buildFixtureDetailHref,
   type FixtureRow,
-  LEAGUE_OPTIONS,
+  getLeaguePickerOptions,
+  isScriptSportKey,
   type MatchStatus,
+  type ScriptSportKey,
+  SPORT_OPTIONS,
 } from "@/lib/fixtures-shared";
 
 function filterMatches(matches: FixtureRow[], query: string): FixtureRow[] {
@@ -131,7 +134,7 @@ function MatchCard({
     <Link
       href={href}
       className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition-[border-color,box-shadow] hover:border-[var(--dream-yellow)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]"
-      aria-label={`${m.home} versus ${m.away}. View match and five script slots.`}
+      aria-label={`${m.home} versus ${m.away}. View match and script slots.`}
     >
       <div className="border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3.5">
         <div className="flex items-start justify-between gap-3">
@@ -177,18 +180,40 @@ function MatchCard({
           </p>
         </div>
       </div>
-      <ScriptSlotsSummary compact />
+      <ScriptSlotsSummary compact sportKey={m.sportKey} />
     </Link>
   );
 }
 
 export default function HomePage() {
+  const [sportKey, setSportKey] = useState<ScriptSportKey>("soccer");
   const [leagueId, setLeagueId] = useState(ALL_LEAGUES_ID);
   const [query, setQuery] = useState("");
   const [fixtures, setFixtures] = useState<FixtureRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
+
+  const sportPickerOptions = useMemo(
+    () => SPORT_OPTIONS.map((s) => ({ id: s.id, label: s.label })),
+    [],
+  );
+
+  const leaguePickerOptions = useMemo(
+    () => getLeaguePickerOptions(sportKey),
+    [sportKey],
+  );
+
+  const onSportChange = (id: string) => {
+    if (!isScriptSportKey(id)) return;
+    setSportKey(id);
+    setLeagueId(ALL_LEAGUES_ID);
+  };
+
+  useEffect(() => {
+    const allowed = new Set(leaguePickerOptions.map((o) => o.id));
+    if (!allowed.has(leagueId)) setLeagueId(ALL_LEAGUES_ID);
+  }, [leaguePickerOptions, leagueId]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowMs(Date.now()), 30_000);
@@ -199,7 +224,9 @@ export default function HomePage() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch(`/api/fixtures?leagueId=${encodeURIComponent(leagueId)}`)
+    fetch(
+      `/api/fixtures?sport=${encodeURIComponent(sportKey)}&leagueId=${encodeURIComponent(leagueId)}`,
+    )
       .then(async (r) => {
         const body = (await r.json()) as { fixtures?: FixtureRow[]; error?: string };
         if (!r.ok) throw new Error(body.error ?? r.statusText);
@@ -220,7 +247,7 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [leagueId]);
+  }, [sportKey, leagueId]);
 
   const filtered = useMemo(() => filterMatches(fixtures, query), [fixtures, query]);
 
@@ -261,9 +288,18 @@ export default function HomePage() {
           </label>
         </div>
 
-        <div className="sm:ml-auto sm:mr-3 sm:shrink-0">
+        <div className="flex w-full flex-col gap-4 sm:ml-auto sm:mr-3 sm:w-auto sm:shrink-0 sm:flex-row sm:items-end sm:justify-end">
           <LeagueSelect
-            options={LEAGUE_OPTIONS}
+            showLabel
+            label="Sport"
+            options={sportPickerOptions}
+            value={sportKey}
+            onChange={onSportChange}
+          />
+          <LeagueSelect
+            showLabel
+            label="League"
+            options={leaguePickerOptions}
             value={leagueId}
             onChange={setLeagueId}
           />
@@ -278,7 +314,7 @@ export default function HomePage() {
         <p className="py-8 text-center text-sm text-rose-300/90">{error}</p>
       ) : filtered.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--muted)]">
-          No upcoming matches for this league, or nothing matches your search.
+          No upcoming matches for this sport or league, or nothing matches your search.
         </p>
       ) : (
         <>
@@ -337,7 +373,7 @@ export default function HomePage() {
                             <TeamNames home={m.home} away={m.away} />
                           </p>
                           <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-[var(--muted)] group-hover:text-[var(--foreground)]/80">
-                            5 script slots — open row for full list
+                            5 slots — open row for full list
                           </p>
                         </td>
                         <td className="min-w-0 px-4 py-4 align-middle break-words text-[var(--muted)]">

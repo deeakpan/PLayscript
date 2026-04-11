@@ -79,7 +79,7 @@ export default async function FixturePage({
     Number.isFinite(homeScore) &&
     Number.isFinite(awayScore);
   const slotActuals = hasLineScore
-    ? deriveSlotOutcomesFromScore(homeScore, awayScore)
+    ? deriveSlotOutcomesFromScore(homeScore, awayScore, fixture.sportKey)
     : null;
 
   const matchFinished = status === "finished";
@@ -151,7 +151,12 @@ export default async function FixturePage({
 
       {showBuildScript ? (
         <section className="border-t border-[var(--border)] pt-8">
-          <ScriptSlotForm homeTeam={home} awayTeam={away} canEdit={canEditScripts} />
+          <ScriptSlotForm
+            homeTeam={home}
+            awayTeam={away}
+            canEdit={canEditScripts}
+            sportKey={fixture.sportKey}
+          />
         </section>
       ) : null}
     </div>

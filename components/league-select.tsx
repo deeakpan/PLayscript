@@ -1,7 +1,7 @@
 "use client";
 
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 import type { LeagueOption } from "@/lib/fixtures-shared";
 
@@ -9,7 +9,9 @@ type Props = {
   options: LeagueOption[];
   value: string;
   onChange: (id: string) => void;
+  /** Shown above the control when `showLabel` is true (e.g. Sport vs League). */
   label?: string;
+  showLabel?: boolean;
 };
 
 export function LeagueSelect({
@@ -17,6 +19,7 @@ export function LeagueSelect({
   value,
   onChange,
   label = "League",
+  showLabel = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -40,7 +43,13 @@ export function LeagueSelect({
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div className="flex min-w-0 flex-col gap-1.5">
+      {showLabel ? (
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+          {label}
+        </span>
+      ) : null}
+      <div ref={rootRef} className="relative">
       <button
         type="button"
         aria-label={label}
@@ -63,10 +72,21 @@ export function LeagueSelect({
           aria-activedescendant={value}
           className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] py-1 shadow-lg ring-1 ring-black/20"
         >
-          {options.map((opt) => {
+          {options.map((opt, i) => {
             const selected = opt.id === value;
+            const prev = options[i - 1];
+            const showHeading = Boolean(opt.group && opt.group !== prev?.group);
             return (
-              <li key={opt.id} role="presentation">
+              <Fragment key={opt.id}>
+                {showHeading ? (
+                  <li
+                    role="presentation"
+                    className="pointer-events-none select-none px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]/90"
+                  >
+                    {opt.group}
+                  </li>
+                ) : null}
+                <li role="presentation">
                 <button
                   type="button"
                   role="option"
@@ -84,10 +104,12 @@ export function LeagueSelect({
                   {opt.label}
                 </button>
               </li>
+              </Fragment>
             );
           })}
         </ul>
       ) : null}
+      </div>
     </div>
   );
 }

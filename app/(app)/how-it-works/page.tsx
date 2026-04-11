@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-import { SCRIPT_SLOTS } from "@/lib/script-slots";
+import {
+  getScriptSlots,
+  SCRIPT_SLOT_PACKS_ORDER,
+  SCRIPT_SPORT_TITLES,
+} from "@/lib/script-slots";
 
 export default function HowItWorksPage() {
   return (
@@ -19,24 +23,34 @@ export default function HowItWorksPage() {
           How it works
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-          Protocol rules, slot grading, and payout tiers — full write-up coming soon.
+          Protocol rules, slot grading, and payout tiers — full write-up coming soon. Slot definitions
+          depend on the match&apos;s sport (football, basketball, American football, baseball).
         </p>
       </div>
 
-      <ol className="list-none space-y-8 border-t border-[var(--border)] pt-10">
-        {SCRIPT_SLOTS.map((s) => (
-          <li
-            key={s.anchor}
-            id={s.anchor}
-            className="scroll-mt-24 rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-4"
-          >
-            <p className="font-mono text-xs text-[var(--accent)] tabular-nums">{s.index}.</p>
-            <h2 className="mt-1 text-lg font-semibold text-[var(--foreground)]">{s.title}</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">{s.outcomes}</p>
-            <p className="mt-3 text-sm italic text-[var(--muted)]">Details TBD.</p>
-          </li>
-        ))}
-      </ol>
+      {SCRIPT_SLOT_PACKS_ORDER.map((sportKey) => {
+        const slots = getScriptSlots(sportKey);
+        const title = SCRIPT_SPORT_TITLES[sportKey];
+        return (
+          <section key={sportKey} className="space-y-4 border-t border-[var(--border)] pt-10">
+            <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">{title}</h2>
+            <ol className="list-none space-y-6">
+              {slots.map((s) => (
+                <li
+                  key={s.anchor}
+                  id={s.anchor}
+                  className="scroll-mt-24 rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-4"
+                >
+                  <p className="font-mono text-xs text-[var(--accent)] tabular-nums">{s.index}.</p>
+                  <h3 className="mt-1 text-lg font-semibold text-[var(--foreground)]">{s.title}</h3>
+                  <p className="mt-1 text-sm text-[var(--muted)]">{s.outcomes}</p>
+                  <p className="mt-3 text-sm italic text-[var(--muted)]">Details TBD.</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        );
+      })}
     </div>
   );
 }

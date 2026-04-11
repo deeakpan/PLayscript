@@ -1,10 +1,16 @@
-import { SCRIPT_SLOTS } from "@/lib/script-slots";
+import type { ScriptSportKey } from "@/lib/fixtures-shared";
+import { getScriptSlots, SCRIPT_SPORT_TITLES } from "@/lib/script-slots";
 
 type Props = {
   compact?: boolean;
+  /** Defaults to football (soccer) slot copy. */
+  sportKey?: ScriptSportKey;
 };
 
-export function ScriptSlotsSummary({ compact }: Props) {
+export function ScriptSlotsSummary({ compact, sportKey = "soccer" }: Props) {
+  const slots = getScriptSlots(sportKey);
+  const sportTitle = SCRIPT_SPORT_TITLES[sportKey];
+
   return (
     <div
       className={
@@ -24,6 +30,9 @@ export function ScriptSlotsSummary({ compact }: Props) {
       </p>
       <p className="mt-0.5 text-[11px] text-[var(--muted)]">
         Five predictions lock into your script before kickoff.
+        {sportKey !== "soccer" ? (
+          <span className="mt-0.5 block text-[10px] text-[var(--muted)]/90">{sportTitle} pack.</span>
+        ) : null}
       </p>
       <ol
         className={
@@ -32,7 +41,7 @@ export function ScriptSlotsSummary({ compact }: Props) {
             : "mt-4 grid list-none gap-3 text-sm leading-snug sm:grid-cols-2"
         }
       >
-        {SCRIPT_SLOTS.map((s) => (
+        {slots.map((s) => (
           <li key={s.index} className="flex min-w-0 gap-2">
             <span className="shrink-0 font-mono text-[var(--accent)] tabular-nums">{s.index}.</span>
             <span className="min-w-0 text-[var(--foreground)]">

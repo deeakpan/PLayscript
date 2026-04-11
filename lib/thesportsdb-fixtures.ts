@@ -5,6 +5,7 @@ import { unstable_cache } from "next/cache";
 import {
   ALL_LEAGUES_ID,
   type FixtureRow,
+  getSportKeyForSourceLeagueId,
   UPCOMING_LEAGUE_ID_SET,
   UPCOMING_LEAGUES,
 } from "@/lib/fixtures-shared";
@@ -54,7 +55,19 @@ function mapStrStatus(strStatus: string | null | undefined): FixtureRow["status"
   ) {
     return "live";
   }
-  if (s.includes("finished") || s.includes("full time") || s.includes("after")) {
+  // US leagues often use "FT"; baseball/basketball use "Final" etc.
+  if (
+    s === "ft" ||
+    s === "final" ||
+    s.includes("finished") ||
+    s.includes("full time") ||
+    s.includes("after extra time") ||
+    s.includes("after golden goal") ||
+    s.includes("after penalties") ||
+    s.includes("match finished") ||
+    s.includes("finalizado") ||
+    s.includes("game over")
+  ) {
     return "finished";
   }
   if (s.includes("postponed") || s.includes("delayed") || s.includes("suspended")) {
@@ -96,6 +109,7 @@ export function mapApiEventToFixture(ev: ApiEvent): FixtureRow | null {
     `${home}-${away}-${ev.dateEvent ?? ""}-${ev.strTime ?? ""}`;
 
   const lid = ev.idLeague?.trim();
+  const sportKey = getSportKeyForSourceLeagueId(lid);
   const hs = parseApiGoal(ev.intHomeScore);
   const as = parseApiGoal(ev.intAwayScore);
   const scores =
@@ -106,6 +120,7 @@ export function mapApiEventToFixture(ev: ApiEvent): FixtureRow | null {
     league: (ev.strLeague ?? "—").trim() || "—",
     home,
     away,
+    sportKey,
     kickoffUtc: kickoffUtcIso(ev),
     status: mapStrStatus(ev.strStatus),
     ...(lid ? { sourceLeagueId: lid } : {}),
@@ -133,10 +148,12 @@ export async function fetchUpcomingFixtures(leagueId: string): Promise<FixtureRo
   return out;
 }
 
-export async function fetchUpcomingFixturesAll(): Promise<FixtureRow[]> {
-  const lists = await Promise.all(
-    UPCOMING_LEAGUES.map((l) => fetchUpcomingFixtures(l.id)),
-  );
+/** Merge `eventsnextleague` for many ids (dedupe by source league + event id). */
+export async function fetchUpcomingFixturesMerged(
+  leagueIds: readonly string[],
+): Promise<FixtureRow[]> {
+  if (leagueIds.length === 0) return [];
+  const lists = await Promise.all(leagueIds.map((id) => fetchUpcomingFixtures(id)));
   const merged = new Map<string, FixtureRow>();
   for (const list of lists) {
     for (const f of list) {
@@ -147,6 +164,10 @@ export async function fetchUpcomingFixturesAll(): Promise<FixtureRow[]> {
   return Array.from(merged.values()).sort(
     (a, b) => new Date(a.kickoffUtc).getTime() - new Date(b.kickoffUtc).getTime(),
   );
+}
+
+export async function fetchUpcomingFixturesAll(): Promise<FixtureRow[]> {
+  return fetchUpcomingFixturesMerged(UPCOMING_LEAGUES.map((l) => l.id));
 }
 
 /**
