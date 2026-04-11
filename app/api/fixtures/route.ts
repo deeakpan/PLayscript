@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { ALL_LEAGUES_ID, UPCOMING_LEAGUES } from "@/lib/fixtures-shared";
 import {
-  ALL_LEAGUES_ID,
   fetchUpcomingFixtures,
   fetchUpcomingFixturesAll,
-  UPCOMING_LEAGUES,
+  THESPORTSDB_LIST_REVALIDATE_SEC,
 } from "@/lib/thesportsdb-fixtures";
 
 const allowedIds = new Set<string>([
@@ -23,7 +23,14 @@ export async function GET(req: NextRequest) {
       leagueId === ALL_LEAGUES_ID
         ? await fetchUpcomingFixturesAll()
         : await fetchUpcomingFixtures(leagueId);
-    return NextResponse.json({ fixtures });
+    return NextResponse.json(
+      { fixtures },
+      {
+        headers: {
+          "Cache-Control": `public, s-maxage=${THESPORTSDB_LIST_REVALIDATE_SEC}`,
+        },
+      },
+    );
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 502 });

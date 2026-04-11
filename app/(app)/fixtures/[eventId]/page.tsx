@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Fragment } from "react";
 
 import { ScriptSlotForm } from "@/components/script-slot-form";
-import {
-  fetchFixtureByEventId,
-  parseFixtureLeagueQuery,
-} from "@/lib/thesportsdb-fixtures";
-import type { MatchStatus } from "@/lib/thesportsdb-fixtures";
+import { parseFixtureLeagueQuery, type MatchStatus } from "@/lib/fixtures-shared";
+import { fetchFixtureByEventId } from "@/lib/thesportsdb-fixtures";
+import { deriveSlotOutcomesFromScore } from "@/lib/script-slot-outcomes";
 
 function statusLabel(s: MatchStatus): string {
   switch (s) {
@@ -66,7 +65,7 @@ export default async function FixturePage({
   const fixture = await fetchFixtureByEventId(eventId, { leagueId: leagueHint });
   if (!fixture) notFound();
 
-  const { home, away, league, kickoffUtc, status } = fixture;
+  const { home, away, league, kickoffUtc, status, homeScore, awayScore } = fixture;
   const kickoffMs = new Date(kickoffUtc).getTime();
   const canEditScripts =
     Number.isFinite(kickoffMs) &&
@@ -74,8 +73,20 @@ export default async function FixturePage({
     status !== "finished" &&
     status !== "live";
 
+  const hasLineScore =
+    typeof homeScore === "number" &&
+    typeof awayScore === "number" &&
+    Number.isFinite(homeScore) &&
+    Number.isFinite(awayScore);
+  const slotActuals = hasLineScore
+    ? deriveSlotOutcomesFromScore(homeScore, awayScore)
+    : null;
+
+  const matchFinished = status === "finished";
+  const showBuildScript = !matchFinished;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/"
@@ -90,14 +101,27 @@ export default async function FixturePage({
           How it works
         </Link>
       </div>
-      <div>
-        <h2 className="mt-0 text-xl font-semibold tracking-tight text-[var(--foreground)] sm:text-2xl">
-          <span className="text-[var(--team-text)]">{home}</span>{" "}
-          <span className="text-[var(--accent)]">vs</span>{" "}
-          <span className="text-[var(--team-text)]">{away}</span>
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">{league}</p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+
+      <header className="space-y-3">
+        {hasLineScore ? (
+          <h2 className="mt-0 text-[clamp(1.125rem,4vw,1.75rem)] font-semibold leading-snug tracking-tight text-[var(--foreground)]">
+            <span className="text-[var(--team-text)]">{home}</span>{" "}
+            <span className="tabular-nums text-[var(--muted)]">{homeScore}</span>
+            <span className="mx-1.5 text-[var(--accent)]" aria-hidden>
+              –
+            </span>
+            <span className="tabular-nums text-[var(--muted)]">{awayScore}</span>{" "}
+            <span className="text-[var(--team-text)]">{away}</span>
+          </h2>
+        ) : (
+          <h2 className="mt-0 text-xl font-semibold tracking-tight text-[var(--foreground)] sm:text-2xl">
+            <span className="text-[var(--team-text)]">{home}</span>{" "}
+            <span className="text-[var(--accent)]">vs</span>{" "}
+            <span className="text-[var(--team-text)]">{away}</span>
+          </h2>
+        )}
+        <p className="text-sm text-[var(--muted)]">{league}</p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <span
             className={`inline-flex shrink-0 items-center rounded px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${statusClass(status)}`}
           >
@@ -107,11 +131,29 @@ export default async function FixturePage({
             Kickoff (UTC): {formatKickoffUtc(kickoffUtc)}
           </span>
         </div>
-      </div>
+      </header>
 
-      <section>
-        <ScriptSlotForm homeTeam={home} awayTeam={away} canEdit={canEditScripts} />
-      </section>
+      {hasLineScore && slotActuals ? (
+        <section aria-label="Script slot outcomes from the scoreline" className="space-y-4">
+          <h3 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
+            Script outcomes
+          </h3>
+          <dl className="grid max-w-sm grid-cols-[5.5rem_1fr] gap-x-6 gap-y-2.5 text-sm leading-snug">
+            {slotActuals.map((row) => (
+              <Fragment key={row.label}>
+                <dt className="text-[var(--muted)]">{row.label}</dt>
+                <dd className="font-semibold tabular-nums text-[var(--foreground)]">{row.actual}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        </section>
+      ) : null}
+
+      {showBuildScript ? (
+        <section className="border-t border-[var(--border)] pt-8">
+          <ScriptSlotForm homeTeam={home} awayTeam={away} canEdit={canEditScripts} />
+        </section>
+      ) : null}
     </div>
   );
 }

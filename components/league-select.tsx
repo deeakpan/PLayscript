@@ -3,7 +3,7 @@
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 
-import type { LeagueOption } from "@/lib/thesportsdb-fixtures";
+import type { LeagueOption } from "@/lib/fixtures-shared";
 
 type Props = {
   options: LeagueOption[];

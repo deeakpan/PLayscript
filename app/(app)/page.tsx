@@ -13,7 +13,7 @@ import {
   type FixtureRow,
   LEAGUE_OPTIONS,
   type MatchStatus,
-} from "@/lib/thesportsdb-fixtures";
+} from "@/lib/fixtures-shared";
 
 function filterMatches(matches: FixtureRow[], query: string): FixtureRow[] {
   const q = query.trim().toLowerCase();
@@ -70,11 +70,15 @@ function formatKickoffUtc(iso: string): string {
   }).format(d);
 }
 
+const ENDED_AFTER_KICKOFF_MS = 120 * 60 * 1000;
+
 function formatTimeUntilKickoff(iso: string, nowMs: number): string {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return "—";
+  const sinceKickoff = nowMs - t;
+  if (sinceKickoff >= ENDED_AFTER_KICKOFF_MS) return "Ended";
+  if (sinceKickoff >= 0) return "Started";
   const diff = t - nowMs;
-  if (diff <= 0) return "Started";
   const sec = Math.floor(diff / 1000);
   const min = Math.floor(sec / 60);
   const hr = Math.floor(min / 60);

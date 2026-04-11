@@ -1,42 +1,26 @@
-/** TheSportsDB free tier — key `3` in path (public read). */
+import "server-only";
+
+import { unstable_cache } from "next/cache";
+
+import {
+  ALL_LEAGUES_ID,
+  type FixtureRow,
+  UPCOMING_LEAGUE_ID_SET,
+  UPCOMING_LEAGUES,
+} from "@/lib/fixtures-shared";
+
+/** TheSportsDB free tier — key `123` in path (public demo key from docs). */
 
 export const THESPORTSDB_JSON_BASE =
-  "https://www.thesportsdb.com/api/v1/json/3";
+  "https://www.thesportsdb.com/api/v1/json/123";
 
-export const ALL_LEAGUES_ID = "all";
+/** Data-cache TTL for listings + per-event fixture resolution (~3 origin hits/min at peak). */
+export const THESPORTSDB_LIST_REVALIDATE_SEC = 20;
 
-export const UPCOMING_LEAGUES = [
-  { id: "4480", label: "UEFA Champions League" },
-  { id: "4328", label: "English Premier League" },
-  { id: "4335", label: "Scottish Premier League" },
-  { id: "4396", label: "English League 1" },
-] as const;
-
-export type LeagueOption = { id: string; label: string };
-
-export const LEAGUE_OPTIONS: LeagueOption[] = [
-  { id: ALL_LEAGUES_ID, label: "All leagues" },
-  ...UPCOMING_LEAGUES.map((l) => ({ id: l.id, label: l.label })),
-];
-
-/** League ids we fetch in “all” merge — use for `?league=` validation. */
-export const UPCOMING_LEAGUE_ID_SET = new Set<string>(
-  UPCOMING_LEAGUES.map((l) => l.id),
-);
-
-export type MatchStatus = "open" | "closing_soon" | "live" | "finished";
-
-export interface FixtureRow {
-  id: string;
-  league: string;
-  home: string;
-  away: string;
-  /** ISO-8601 instant in UTC (see `kickoffUtcIso`). */
-  kickoffUtc: string;
-  status: MatchStatus;
-  /** TheSportsDB `idLeague` when present — disambiguates links when `idEvent` alone is not unique. */
-  sourceLeagueId?: string;
-}
+export type FetchFixtureByEventIdOptions = {
+  /** When set, scan that league’s `eventsnextleague` list first (same source as the home table). */
+  leagueId?: string | null;
+};
 
 type ApiEvent = {
   idEvent?: string;
@@ -48,9 +32,17 @@ type ApiEvent = {
   strTime?: string | null;
   strTimestamp?: string | null;
   strStatus?: string | null;
+  intHomeScore?: string | number | null;
+  intAwayScore?: string | number | null;
 };
 
-function mapStrStatus(strStatus: string | null | undefined): MatchStatus {
+function parseApiGoal(v: string | number | null | undefined): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : Number.parseInt(String(v), 10);
+  return Number.isFinite(n) && !Number.isNaN(n) ? n : null;
+}
+
+function mapStrStatus(strStatus: string | null | undefined): FixtureRow["status"] {
   const s = (strStatus ?? "").trim().toLowerCase();
   if (
     s.includes("first half") ||
@@ -104,6 +96,10 @@ export function mapApiEventToFixture(ev: ApiEvent): FixtureRow | null {
     `${home}-${away}-${ev.dateEvent ?? ""}-${ev.strTime ?? ""}`;
 
   const lid = ev.idLeague?.trim();
+  const hs = parseApiGoal(ev.intHomeScore);
+  const as = parseApiGoal(ev.intAwayScore);
+  const scores =
+    hs !== null && as !== null ? { homeScore: hs, awayScore: as } : {};
 
   return {
     id,
@@ -113,42 +109,15 @@ export function mapApiEventToFixture(ev: ApiEvent): FixtureRow | null {
     kickoffUtc: kickoffUtcIso(ev),
     status: mapStrStatus(ev.strStatus),
     ...(lid ? { sourceLeagueId: lid } : {}),
+    ...scores,
   };
-}
-
-/**
- * Path + optional `league` query so the detail page resolves from the same upcoming feed
- * as the list (see `fetchFixtureByEventId`).
- */
-export function buildFixtureDetailHref(
-  fixtureId: string,
-  listFilterLeagueId: string,
-  rowSourceLeagueId?: string | null,
-): string {
-  const base = `/fixtures/${encodeURIComponent(fixtureId)}`;
-  const hint =
-    listFilterLeagueId !== ALL_LEAGUES_ID
-      ? listFilterLeagueId
-      : rowSourceLeagueId?.trim() ?? "";
-  if (hint && UPCOMING_LEAGUE_ID_SET.has(hint)) {
-    return `${base}?league=${encodeURIComponent(hint)}`;
-  }
-  return base;
-}
-
-/** Safe `league` search param for fixture detail (ignored if missing or not a known league id). */
-export function parseFixtureLeagueQuery(
-  raw: string | string[] | undefined,
-): string | undefined {
-  const v = Array.isArray(raw) ? raw[0] : raw;
-  const t = v?.trim();
-  if (!t || t === ALL_LEAGUES_ID || !UPCOMING_LEAGUE_ID_SET.has(t)) return undefined;
-  return t;
 }
 
 export async function fetchUpcomingFixtures(leagueId: string): Promise<FixtureRow[]> {
   const url = `${THESPORTSDB_JSON_BASE}/eventsnextleague.php?id=${encodeURIComponent(leagueId)}`;
-  const res = await fetch(url);
+  const res = await fetch(url, {
+    next: { revalidate: THESPORTSDB_LIST_REVALIDATE_SEC },
+  });
   if (!res.ok) {
     throw new Error(`TheSportsDB HTTP ${res.status}`);
   }
@@ -180,11 +149,6 @@ export async function fetchUpcomingFixturesAll(): Promise<FixtureRow[]> {
   );
 }
 
-export type FetchFixtureByEventIdOptions = {
-  /** When set, scan that league’s `eventsnextleague` list first (same source as the home table). */
-  leagueId?: string | null;
-};
-
 /**
  * Resolve a fixture by TheSportsDB `idEvent` (our `FixtureRow.id`).
  *
@@ -192,7 +156,7 @@ export type FetchFixtureByEventIdOptions = {
  * leagues, (3) `lookupevent.php` **only** if the API returns the same `idEvent` (free tier often
  * maps new ids to unrelated historical events).
  */
-export async function fetchFixtureByEventId(
+async function fetchFixtureByEventIdUncached(
   eventId: string,
   options?: FetchFixtureByEventIdOptions,
 ): Promise<FixtureRow | null> {
@@ -214,11 +178,28 @@ export async function fetchFixtureByEventId(
   if (fromMerged) return fromMerged;
 
   const lookupUrl = `${THESPORTSDB_JSON_BASE}/lookupevent.php?id=${encodeURIComponent(id)}`;
-  const res = await fetch(lookupUrl, { next: { revalidate: 120 } });
+  const res = await fetch(lookupUrl, {
+    next: { revalidate: THESPORTSDB_LIST_REVALIDATE_SEC },
+  });
   if (!res.ok) return null;
   const json: { events?: ApiEvent[] | null } = await res.json();
   const ev = json.events?.[0];
   const returnedId = ev?.idEvent?.trim();
   if (!ev || returnedId !== id) return null;
   return mapApiEventToFixture(ev);
+}
+
+/** One shared server cache entry per `idEvent` (all visitors reuse for `THESPORTSDB_LIST_REVALIDATE_SEC`). */
+export async function fetchFixtureByEventId(
+  eventId: string,
+  options?: FetchFixtureByEventIdOptions,
+): Promise<FixtureRow | null> {
+  const id = eventId.trim();
+  if (!id) return null;
+
+  return unstable_cache(
+    async () => fetchFixtureByEventIdUncached(id, options),
+    ["thesportsdb-fixture", id],
+    { revalidate: THESPORTSDB_LIST_REVALIDATE_SEC },
+  )();
 }
