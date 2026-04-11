@@ -1,8 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Neutral dark (pre–forest-green) */
+  --background: #0c0d0f;
+  --foreground: #ffffff;
+  /* Team / fixture names — softer than pure white */
+  --team-text: #c5c9d0;
+  --muted: #a1a1aa;
+  --border: #27272a;
+  --sidebar: #111113;
+  --surface: #141416;
+  --surface-elevated: #18181b;
+  --surface-hover: #1f1f23;
+  /* Brand green */
+  --accent: #3d8b6e;
+  --accent-muted: #2d6a54;
+  --accent-foreground: #ffffff;
+  --accent-glow: rgba(61, 139, 110, 0.5);
+  /* Deep yellow — hovers & focus only */
+  --dream-yellow: #d4a623;
+  --dream-yellow-muted: #b8891a;
+  --dream-glow: rgba(212, 166, 35, 0.42);
+  /* Active nav / selection — neutral, not green wash */
+  --surface-active: rgba(255, 255, 255, 0.07);
+  --surface-highlight-hover: rgba(212, 166, 35, 0.09);
+  /* Search pill — neutral panels */
+  --search-bar-bg: #18181b;
+  --search-icon-bg: #27272a;
+  --search-placeholder: #a1a1aa;
+  /* Ambient page wash — green on charcoal (layered on html so it always paints) */
+  --bg-gradient-green-top: rgba(61, 139, 110, 0.2);
+  --bg-gradient-green-tr: rgba(45, 106, 84, 0.13);
+  --bg-gradient-green-bl: rgba(61, 139, 110, 0.09);
+  --bg-gradient-green-mid: rgba(45, 106, 84, 0.07);
+  /* Header / sidebar: translucent so the html wash reads through */
+  --shell-sidebar-fill: color-mix(in srgb, var(--sidebar) 74%, transparent);
+  --shell-header-fill: color-mix(in srgb, var(--background) 64%, transparent);
 }
 
 @theme inline {
@@ -12,15 +45,42 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Wash lives on html (color behind images); avoids ::before stacking bugs on some engines */
+html {
+  min-height: 100%;
+  background-color: var(--background);
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 22%, transparent) 0%,
+      transparent 38%
+    ),
+    radial-gradient(
+      ellipse 90% 45% at 50% 0%,
+      var(--bg-gradient-green-top) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 52% 40% at 100% 0%,
+      var(--bg-gradient-green-tr) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 48% 36% at 0% 100%,
+      var(--bg-gradient-green-bl) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 65% 48% at 50% 100%,
+      var(--bg-gradient-green-mid) 0%,
+      transparent 58%
+    );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-attachment: fixed;
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: transparent;
 }
