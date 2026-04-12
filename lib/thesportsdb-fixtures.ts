@@ -51,6 +51,11 @@ function mapStrStatus(strStatus: string | null | undefined): FixtureRow["status"
     s.includes("half time") ||
     s.includes("extra time") ||
     s.includes("penalty") ||
+    s.includes("quarter") ||
+    s.includes("qtr") ||
+    s.includes("overtime") ||
+    s.includes(" ot") ||
+    s.endsWith(" ot") ||
     s === "live"
   ) {
     return "live";

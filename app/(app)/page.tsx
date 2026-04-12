@@ -16,6 +16,7 @@ import {
   type ScriptSportKey,
   SPORT_OPTIONS,
 } from "@/lib/fixtures-shared";
+import { deriveDisplayMatchStatus, matchInferenceWindowMs } from "@/lib/fixture-display-status";
 
 function filterMatches(matches: FixtureRow[], query: string): FixtureRow[] {
   const q = query.trim().toLowerCase();
@@ -72,13 +73,12 @@ function formatKickoffUtc(iso: string): string {
   }).format(d);
 }
 
-const ENDED_AFTER_KICKOFF_MS = 120 * 60 * 1000;
-
-function formatTimeUntilKickoff(iso: string, nowMs: number): string {
+function formatTimeUntilKickoff(iso: string, nowMs: number, sportKey: ScriptSportKey): string {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return "—";
   const sinceKickoff = nowMs - t;
-  if (sinceKickoff >= ENDED_AFTER_KICKOFF_MS) return "Ended";
+  const endedAfterMs = matchInferenceWindowMs(sportKey);
+  if (sinceKickoff >= endedAfterMs) return "Ended";
   if (sinceKickoff >= 0) return "Started";
   const diff = t - nowMs;
   const sec = Math.floor(diff / 1000);
@@ -129,7 +129,13 @@ function MatchCard({
   listLeagueId: string;
 }) {
   const href = buildFixtureDetailHref(m.id, listLeagueId, m.sourceLeagueId);
-  const untilKickoff = formatTimeUntilKickoff(m.kickoffUtc, nowMs);
+  const untilKickoff = formatTimeUntilKickoff(m.kickoffUtc, nowMs, m.sportKey);
+  const displayStatus = deriveDisplayMatchStatus(
+    m.status,
+    new Date(m.kickoffUtc).getTime(),
+    nowMs,
+    m.sportKey,
+  );
   return (
     <Link
       href={href}
@@ -150,7 +156,8 @@ function MatchCard({
           <p className="mt-1.5 text-xs font-medium text-[var(--muted)]">{m.league}</p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">Time</p>
+          <StatusBadge status={displayStatus} />
+          <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">Time</p>
           <p className="mt-1 text-sm font-semibold tabular-nums leading-snug text-[var(--foreground)]">
             {untilKickoff}
           </p>
@@ -315,7 +322,7 @@ export default function HomePage() {
           <div className="hidden md:block">
             <div className="relative rounded-lg border border-[var(--border)] bg-[var(--surface)]">
               <div
-                className="max-h-[min(32rem,calc(100dvh-12rem))] overflow-auto overscroll-contain [scrollbar-color:rgba(161,161,170,0.35)_transparent] [scrollbar-width:thin] [-ms-overflow-style:none]"
+                className="max-h-[min(32rem,calc(100dvh-12rem))] overflow-auto overscroll-contain [-ms-overflow-style:none]"
                 style={{ WebkitOverflowScrolling: "touch" }}
               >
                 <table className="w-full min-w-[52rem] table-fixed border-collapse text-left text-sm">
@@ -363,7 +370,14 @@ export default function HomePage() {
                           {m.league}
                         </td>
                         <td className="px-4 py-4 align-middle">
-                          <StatusBadge status={m.status} />
+                          <StatusBadge
+                            status={deriveDisplayMatchStatus(
+                              m.status,
+                              new Date(m.kickoffUtc).getTime(),
+                              nowMs,
+                              m.sportKey,
+                            )}
+                          />
                         </td>
                         <td className="px-4 py-4 align-middle">
                           <div className="flex items-center gap-2">
@@ -378,7 +392,7 @@ export default function HomePage() {
                         </td>
                         <td className="px-4 py-4 align-middle">
                           <span className="font-medium tabular-nums text-[var(--foreground)]">
-                            {formatTimeUntilKickoff(m.kickoffUtc, nowMs)}
+                            {formatTimeUntilKickoff(m.kickoffUtc, nowMs, m.sportKey)}
                           </span>
                         </td>
                       </FixtureTableRow>

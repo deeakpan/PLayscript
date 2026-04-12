@@ -68,7 +68,7 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
 
   const { home, away, league, kickoffUtc, status, homeScore, awayScore, statusDetail } = fixture;
   const kickoffMs = new Date(kickoffUtc).getTime();
-  const displayStatus = deriveDisplayMatchStatus(status, kickoffMs, nowMs);
+  const displayStatus = deriveDisplayMatchStatus(status, kickoffMs, nowMs, fixture.sportKey);
 
   const canEditScripts =
     Number.isFinite(kickoffMs) &&
@@ -84,9 +84,6 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
   const slotActuals = hasLineScore
     ? deriveSlotOutcomesFromScore(homeScore, awayScore, fixture.sportKey)
     : null;
-
-  const matchFinished = displayStatus === "finished";
-  const showBuildScript = !matchFinished;
 
   const showScriptOutcomesBlock =
     displayStatus !== "live" && hasLineScore && slotActuals !== null && slotActuals.length > 0;
@@ -191,15 +188,13 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
         </section>
       ) : null}
 
-      {showBuildScript ? (
-        <FixturePlayscriptSection
-          lookupeventUrl={lookupeventUrl}
-          homeTeam={home}
-          awayTeam={away}
-          canEdit={canEditScripts}
-          sportKey={fixture.sportKey}
-        />
-      ) : null}
+      <FixturePlayscriptSection
+        lookupeventUrl={lookupeventUrl}
+        homeTeam={home}
+        awayTeam={away}
+        canEdit={canEditScripts}
+        sportKey={fixture.sportKey}
+      />
     </div>
   );
 }
