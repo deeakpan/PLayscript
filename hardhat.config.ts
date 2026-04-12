@@ -3,6 +3,11 @@ import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-viem";
 import "dotenv/config";
 
+const somniaTestnetRpcUrl =
+  process.env.SOMNIA_TESTNET_RPC_URL?.trim() ||
+  process.env.SOMNIA_RPC_TESTNET?.trim() ||
+  "https://api.infra.testnet.somnia.network";
+
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.24",
@@ -17,7 +22,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {},
     somnia: {
-      url: "https://api.infra.testnet.somnia.network",
+      url: somniaTestnetRpcUrl,
       chainId: 50312,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },

@@ -1,7 +1,8 @@
 import hre from "hardhat";
 import { formatUnits } from "viem";
 
-import { parseEnvAddress } from "./lib/parse-env-address";
+import { DEFAULT_GETLOGS_BLOCK_SPAN } from "../lib/eth-logs-chunked";
+import { parseEnvAddress } from "../lib/parse-env-address";
 
 /**
  * Invokes `requestBtcPrice` on deployed PriceOracle and polls for `PriceReceived`.
@@ -36,28 +37,38 @@ async function main() {
   console.log("Confirmed in block", fromBlock.toString());
   console.log("\nWaiting for agent callback (up to ~7 min)…\n");
 
+  let nextScanBlock = fromBlock;
   const start = Date.now();
   while (Date.now() - start < TIMEOUT_MS) {
-    const ok = await oracle.getEvents.PriceReceived({}, { fromBlock });
-    if (ok.length > 0) {
-      for (const ev of ok) {
-        const price = ev.args.price!;
-        const wholePart = price / BigInt(1e8);
-        const decimalPart = price % BigInt(1e8);
-        console.log("PriceReceived");
-        console.log("  BTC/USD:", `$${wholePart}.${decimalPart.toString().padStart(8, "0")}`);
-        console.log("  raw (8 decimals):", price.toString());
-      }
-      return;
-    }
+    const latest = await publicClient.getBlockNumber();
+    let lo = nextScanBlock;
+    while (lo <= latest) {
+      const hi = lo + DEFAULT_GETLOGS_BLOCK_SPAN <= latest ? lo + DEFAULT_GETLOGS_BLOCK_SPAN : latest;
 
-    const bad = await oracle.getEvents.RequestFailed({}, { fromBlock });
-    if (bad.length > 0) {
-      for (const ev of bad) {
-        console.log("RequestFailed status:", ev.args.status?.toString());
+      const ok = await oracle.getEvents.PriceReceived({}, { fromBlock: lo, toBlock: hi });
+      if (ok.length > 0) {
+        for (const ev of ok) {
+          const price = ev.args.price!;
+          const wholePart = price / BigInt(1e8);
+          const decimalPart = price % BigInt(1e8);
+          console.log("\nPriceReceived");
+          console.log("  BTC/USD:", `$${wholePart}.${decimalPart.toString().padStart(8, "0")}`);
+          console.log("  raw (8 decimals):", price.toString());
+        }
+        return;
       }
-      process.exit(1);
+
+      const bad = await oracle.getEvents.RequestFailed({}, { fromBlock: lo, toBlock: hi });
+      if (bad.length > 0) {
+        for (const ev of bad) {
+          console.log("\nRequestFailed status:", ev.args.status?.toString());
+        }
+        process.exit(1);
+      }
+
+      lo = hi + 1n;
     }
+    nextScanBlock = latest + 1n;
 
     await new Promise((r) => setTimeout(r, POLL_INTERVAL));
     process.stdout.write("  polling…\r");

@@ -4,8 +4,15 @@ import Link from "next/link";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 
 import type { ScriptSportKey } from "@/lib/fixtures-shared";
+import {
+  overUnderBit,
+  packNonSoccerFive,
+  yesNoBit,
+} from "@/lib/playscript-pack-picks";
 import { getScriptSlots } from "@/lib/script-slots";
 
+import { PlayscriptLockScriptButton } from "./playscript-lock-script-button";
+import { PlayStakeField } from "./play-stake-field";
 import type { ScriptSlotFormBaseProps } from "./script-slot-form-soccer";
 
 const MULT_5 = 3;
@@ -108,7 +115,7 @@ function canAccess5(step: number, s: FiveState): boolean {
   return true;
 }
 
-type ShellProps = Pick<ScriptSlotFormBaseProps, "canEdit"> & {
+type ShellProps = Pick<ScriptSlotFormBaseProps, "canEdit" | "matchId"> & {
   disabled: boolean;
   activeStep: number;
   setActiveStep: (n: number) => void;
@@ -119,11 +126,13 @@ type ShellProps = Pick<ScriptSlotFormBaseProps, "canEdit"> & {
   playStake: string;
   setPlayStake: (v: string) => void;
   scriptComplete: boolean;
+  picksPacked: bigint | null;
   children: ReactNode;
 };
 
 function ScriptFormShell({
   canEdit,
+  matchId,
   disabled,
   activeStep,
   setActiveStep,
@@ -135,6 +144,7 @@ function ScriptFormShell({
   playStake,
   setPlayStake,
   scriptComplete,
+  picksPacked,
 }: ShellProps) {
   const stakeNum = useMemo(() => {
     const n = parseFloat(playStake.replace(/,/g, ""));
@@ -146,7 +156,7 @@ function ScriptFormShell({
     `${v.toLocaleString(undefined, { maximumFractionDigits: 2 })} PLAY`;
   const estPayout5 = showEstPayout ? fmtPlay(stakeNum * MULT_5) : "—";
   const estPayout4 = showEstPayout ? fmtPlay(stakeNum * MULT_4) : "—";
-  const canLock = canEdit && scriptComplete;
+  const formReadyLock = scriptComplete && stakeNum > 0 && picksPacked !== null;
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
@@ -249,18 +259,7 @@ function ScriptFormShell({
             ))}
           </dl>
 
-          <label className="mt-4 block">
-            <span className="text-xs font-medium text-[var(--muted)]">Stake ($PLAY)</span>
-            <input
-              type="text"
-              inputMode="decimal"
-              disabled={!canEdit}
-              value={playStake}
-              onChange={(e) => setPlayStake(e.target.value.replace(/[^\d.]/g, ""))}
-              placeholder="0"
-              className="mt-1.5 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm tabular-nums outline-none focus:border-[var(--accent)]/50 disabled:opacity-50"
-            />
-          </label>
+          <PlayStakeField value={playStake} onChange={setPlayStake} disabled={!canEdit} />
 
           <div className="mt-4 border-t border-[var(--border)] pt-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
@@ -299,16 +298,21 @@ function ScriptFormShell({
             </p>
           </div>
 
-          <button
-            type="button"
-            disabled={!canLock}
-            className="mt-4 w-full rounded-lg bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--background)] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset] transition-[filter,opacity] hover:brightness-110 active:brightness-95 disabled:cursor-not-allowed disabled:bg-[var(--border)] disabled:text-[var(--muted)] disabled:opacity-70 disabled:shadow-none disabled:hover:brightness-100"
-          >
-            Lock script
-          </button>
-          {!canLock && canEdit ? (
+          <PlayscriptLockScriptButton
+            matchId={matchId}
+            picksPacked={picksPacked}
+            playStake={playStake}
+            formReady={formReadyLock}
+            canEdit={canEdit}
+          />
+          {canEdit && !scriptComplete ? (
             <p className="mt-2 text-center text-[11px] text-[var(--muted)]">
               Finish every slot to enable lock.
+            </p>
+          ) : null}
+          {canEdit && scriptComplete && stakeNum <= 0 ? (
+            <p className="mt-2 text-center text-[11px] text-[var(--muted)]">
+              Enter a PLAY stake, then lock on-chain.
             </p>
           ) : null}
         </div>
@@ -317,7 +321,7 @@ function ScriptFormShell({
   );
 }
 
-export function ScriptSlotFormBasketball({ homeTeam, awayTeam, canEdit }: ScriptSlotFormBaseProps) {
+export function ScriptSlotFormBasketball({ homeTeam, awayTeam, canEdit, matchId }: ScriptSlotFormBaseProps) {
   const sportKey: ScriptSportKey = "basketball";
   const slots = getScriptSlots(sportKey);
   const [winner, setWinner] = useState<Winner2>(null);
@@ -365,6 +369,18 @@ export function ScriptSlotFormBasketball({ homeTeam, awayTeam, canEdit }: Script
   const y = (v: YesNo | null) => (v === "yes" ? "Yes" : v === "no" ? "No" : "—");
   const stepLabels = ["Winner", "O/U 220.5", "100+", "230+", "10+ pt"] as const;
   const stepValues = [winnerLabel, ouLabel, y(both100), y(c230), y(margin10)];
+
+  const picksPacked = useMemo(() => {
+    if (!winner || !ptsOu || !both100 || !c230 || !margin10) return null;
+    const w = (winner === "home" ? 0 : 1) as 0 | 1 | 2;
+    return packNonSoccerFive(
+      w,
+      overUnderBit(ptsOu),
+      yesNoBit(both100),
+      yesNoBit(c230),
+      yesNoBit(margin10),
+    );
+  }, [winner, ptsOu, both100, c230, margin10]);
 
   const childrenSteps = [1, 2, 3, 4, 5].map((step) => {
     const filled = slotFilled5(step, filledState);
@@ -475,6 +491,7 @@ export function ScriptSlotFormBasketball({ homeTeam, awayTeam, canEdit }: Script
   return (
     <ScriptFormShell
       canEdit={canEdit}
+      matchId={matchId}
       disabled={disabled}
       activeStep={activeStep}
       setActiveStep={setActiveStep}
@@ -485,13 +502,14 @@ export function ScriptSlotFormBasketball({ homeTeam, awayTeam, canEdit }: Script
       playStake={playStake}
       setPlayStake={setPlayStake}
       scriptComplete={scriptComplete}
+      picksPacked={picksPacked}
     >
       {childrenSteps}
     </ScriptFormShell>
   );
 }
 
-export function ScriptSlotFormBaseball({ homeTeam, awayTeam, canEdit }: ScriptSlotFormBaseProps) {
+export function ScriptSlotFormBaseball({ homeTeam, awayTeam, canEdit, matchId }: ScriptSlotFormBaseProps) {
   const sportKey: ScriptSportKey = "baseball";
   const slots = getScriptSlots(sportKey);
   const [winner, setWinner] = useState<Winner2>(null);
@@ -539,6 +557,18 @@ export function ScriptSlotFormBaseball({ homeTeam, awayTeam, canEdit }: ScriptSl
   const y = (v: YesNo | null) => (v === "yes" ? "Yes" : v === "no" ? "No" : "—");
   const stepLabels = ["Winner", "O/U 8.5", "3+ each", "10+ runs", "3+ margin"] as const;
   const stepValues = [winnerLabel, ouLabel, y(both3), y(c10), y(margin3)];
+
+  const picksPacked = useMemo(() => {
+    if (!winner || !runsOu || !both3 || !c10 || !margin3) return null;
+    const w = (winner === "home" ? 0 : 1) as 0 | 1 | 2;
+    return packNonSoccerFive(
+      w,
+      overUnderBit(runsOu),
+      yesNoBit(both3),
+      yesNoBit(c10),
+      yesNoBit(margin3),
+    );
+  }, [winner, runsOu, both3, c10, margin3]);
 
   const childrenSteps = [1, 2, 3, 4, 5].map((step) => {
     const filled = slotFilled5(step, filledState);
@@ -649,6 +679,7 @@ export function ScriptSlotFormBaseball({ homeTeam, awayTeam, canEdit }: ScriptSl
   return (
     <ScriptFormShell
       canEdit={canEdit}
+      matchId={matchId}
       disabled={disabled}
       activeStep={activeStep}
       setActiveStep={setActiveStep}
@@ -659,13 +690,14 @@ export function ScriptSlotFormBaseball({ homeTeam, awayTeam, canEdit }: ScriptSl
       playStake={playStake}
       setPlayStake={setPlayStake}
       scriptComplete={scriptComplete}
+      picksPacked={picksPacked}
     >
       {childrenSteps}
     </ScriptFormShell>
   );
 }
 
-export function ScriptSlotFormNfl({ homeTeam, awayTeam, canEdit }: ScriptSlotFormBaseProps) {
+export function ScriptSlotFormNfl({ homeTeam, awayTeam, canEdit, matchId }: ScriptSlotFormBaseProps) {
   const sportKey: ScriptSportKey = "american_football";
   const slots = getScriptSlots(sportKey);
   const [winner, setWinner] = useState<Winner3>(null);
@@ -713,6 +745,18 @@ export function ScriptSlotFormNfl({ homeTeam, awayTeam, canEdit }: ScriptSlotFor
   const y = (v: YesNo | null) => (v === "yes" ? "Yes" : v === "no" ? "No" : "—");
   const stepLabels = ["Result", "O/U 43.5", "20+", "50+", "10+ pt"] as const;
   const stepValues = [winnerLabel, ouLabel, y(both20), y(c50), y(margin10)];
+
+  const picksPacked = useMemo(() => {
+    if (!winner || !ptsOu || !both20 || !c50 || !margin10) return null;
+    const w = (winner === "home" ? 0 : winner === "away" ? 1 : 2) as 0 | 1 | 2;
+    return packNonSoccerFive(
+      w,
+      overUnderBit(ptsOu),
+      yesNoBit(both20),
+      yesNoBit(c50),
+      yesNoBit(margin10),
+    );
+  }, [winner, ptsOu, both20, c50, margin10]);
 
   const childrenSteps = [1, 2, 3, 4, 5].map((step) => {
     const filled = slotFilled5(step, filledState);
@@ -836,6 +880,7 @@ export function ScriptSlotFormNfl({ homeTeam, awayTeam, canEdit }: ScriptSlotFor
   return (
     <ScriptFormShell
       canEdit={canEdit}
+      matchId={matchId}
       disabled={disabled}
       activeStep={activeStep}
       setActiveStep={setActiveStep}
@@ -846,6 +891,7 @@ export function ScriptSlotFormNfl({ homeTeam, awayTeam, canEdit }: ScriptSlotFor
       playStake={playStake}
       setPlayStake={setPlayStake}
       scriptComplete={scriptComplete}
+      picksPacked={picksPacked}
     >
       {childrenSteps}
     </ScriptFormShell>

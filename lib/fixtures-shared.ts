@@ -100,6 +100,8 @@ export interface FixtureRow {
   /** Present when the API reports line goals (live or finished). */
   homeScore?: number;
   awayScore?: number;
+  /** TheSportsDB `strStatus` (e.g. "Second Half", "Not Started") for live/detail copy. */
+  statusDetail?: string;
 }
 
 /**

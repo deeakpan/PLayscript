@@ -1,6 +1,7 @@
+// @ts-nocheck — Hardhat-viem contract typings expect artifact-augmented `ArtifactsMap`; root `tsconfig.json` excludes `scripts`, so the editor does not merge full Hardhat types here.
 import hre from "hardhat";
 
-import { parseEnvAddress } from "./lib/parse-env-address";
+import { parseEnvAddress } from "../lib/parse-env-address";
 
 /**
  * Fires all 8 TheSportsDB JSON API demo requests on JsonApiProbe, then polls on-chain

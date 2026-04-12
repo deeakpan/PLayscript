@@ -1,12 +1,11 @@
 "use client";
 
-import { CalendarBlank, MagnifyingGlass } from "@phosphor-icons/react";
+import { CalendarBlank, CaretRight, MagnifyingGlass } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { FixtureTableRow } from "@/components/fixture-table-row";
 import { LeagueSelect } from "@/components/league-select";
-import { ScriptSlotsSummary } from "@/components/script-slots-summary";
 import {
   ALL_LEAGUES_ID,
   buildFixtureDetailHref,
@@ -130,57 +129,41 @@ function MatchCard({
   listLeagueId: string;
 }) {
   const href = buildFixtureDetailHref(m.id, listLeagueId, m.sourceLeagueId);
+  const untilKickoff = formatTimeUntilKickoff(m.kickoffUtc, nowMs);
   return (
     <Link
       href={href}
       className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition-[border-color,box-shadow] hover:border-[var(--dream-yellow)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]"
-      aria-label={`${m.home} versus ${m.away}. View match and script slots.`}
+      aria-label={`${m.home} versus ${m.away}. ${untilKickoff} until kickoff or ended. Open fixture for details.`}
     >
-      <div className="border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3.5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-[15px] font-medium leading-snug tracking-tight">
-              <span className="flex flex-col gap-0.5 sm:hidden">
-                <span className="text-[var(--team-text)]">{m.home}</span>
-                <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--accent)]">
-                  vs
-                </span>
-                <span className="text-[var(--team-text)]">{m.away}</span>
+      <div className="flex items-start justify-between gap-3 px-4 py-3.5">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[15px] font-medium leading-snug tracking-tight">
+            <span className="flex flex-col gap-0.5">
+              <span className="text-[var(--team-text)]">{m.home}</span>
+              <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--accent)]">
+                vs
               </span>
-              <span className="hidden sm:inline">
-                <TeamNames home={m.home} away={m.away} />
-              </span>
-            </h3>
-            <p className="mt-1.5 text-xs font-medium text-[var(--muted)]">
-              {m.league}
-            </p>
-          </div>
-          <StatusBadge status={m.status} />
+              <span className="text-[var(--team-text)]">{m.away}</span>
+            </span>
+          </h3>
+          <p className="mt-1.5 text-xs font-medium text-[var(--muted)]">{m.league}</p>
         </div>
-      </div>
-      <div className="grid gap-3 px-4 py-3.5 sm:grid-cols-2">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
-            Kickoff (UTC)
-          </p>
-          <p className="mt-2 inline-flex max-w-full items-center gap-2 text-sm leading-relaxed text-[var(--foreground)]">
-            <CalendarBlank
-              className="h-4 w-4 shrink-0 text-[var(--accent)]"
-              weight="regular"
-            />
-            <span className="min-w-0">{formatKickoffUtc(m.kickoffUtc)}</span>
-          </p>
-        </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
-            Until kickoff
-          </p>
-          <p className="mt-2 text-sm font-medium tabular-nums text-[var(--foreground)]">
-            {formatTimeUntilKickoff(m.kickoffUtc, nowMs)}
+        <div className="shrink-0 text-right">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">Time</p>
+          <p className="mt-1 text-sm font-semibold tabular-nums leading-snug text-[var(--foreground)]">
+            {untilKickoff}
           </p>
         </div>
       </div>
-      <ScriptSlotsSummary compact sportKey={m.sportKey} />
+      <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface)]/80 px-4 py-2.5 text-xs text-[var(--muted)]">
+        <span>Kickoff, countdown & script slots</span>
+        <CaretRight
+          className="h-4 w-4 shrink-0 text-[var(--accent)] transition-transform group-hover:translate-x-0.5"
+          weight="bold"
+          aria-hidden
+        />
+      </div>
     </Link>
   );
 }

@@ -131,10 +131,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             </h1>
           </div>
 
-          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-            <div className="hidden md:block">
-              <PlayBalance />
-            </div>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+            <PlayBalance />
             <Link
               href="/how-it-works"
               className="text-xs font-medium text-[var(--muted)] transition-colors hover:text-[var(--dream-yellow)]"

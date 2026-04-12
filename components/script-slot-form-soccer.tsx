@@ -1,6 +1,11 @@
 "use client";
 
 import Link from "next/link";
+
+import { packSoccerPicks } from "@/lib/playscript-pack-picks";
+
+import { PlayscriptLockScriptButton } from "./playscript-lock-script-button";
+import { PlayStakeField } from "./play-stake-field";
 import { useCallback, useMemo, useState } from "react";
 
 import { SCRIPT_SLOTS } from "@/lib/script-slots";
@@ -16,6 +21,8 @@ export type ScriptSlotFormBaseProps = {
   homeTeam: string;
   awayTeam: string;
   canEdit: boolean;
+  /** On-chain match id from `PlayscriptCore` (fixture section resolves by URL). */
+  matchId: number;
 };
 
 function HowItWorksTitle({ anchor, children }: { anchor: string; children: React.ReactNode }) {
@@ -78,7 +85,7 @@ function canAccessStep(
   return true;
 }
 
-export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit }: ScriptSlotFormBaseProps) {
+export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit, matchId }: ScriptSlotFormBaseProps) {
   const [winner, setWinner] = useState<Winner | null>(null);
   const [totalGoals, setTotalGoals] = useState<OverUnder | null>(null);
   const [bts, setBts] = useState<YesNo | null>(null);
@@ -142,7 +149,17 @@ export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit }: ScriptSlot
   const estPayout5 = showEstPayout ? fmtPlay(stakeNum * MULT_5) : "—";
   const estPayout4 = showEstPayout ? fmtPlay(stakeNum * MULT_4) : "—";
 
-  const canLock = canEdit && scriptComplete;
+  const picksPacked = useMemo(() => {
+    if (!winner || !totalGoals || !bts || !cleanSheet || !scoreComplete) return null;
+    const ph = Number(scoreHome.trim());
+    const pa = Number(scoreAway.trim());
+    if (!Number.isInteger(ph) || !Number.isInteger(pa) || ph < 0 || ph > 30 || pa < 0 || pa > 30) {
+      return null;
+    }
+    return packSoccerPicks(winner, totalGoals, bts, cleanSheet, ph, pa);
+  }, [winner, totalGoals, bts, cleanSheet, scoreComplete, scoreHome, scoreAway]);
+
+  const formReadyLock = scriptComplete && stakeNum > 0 && picksPacked !== null;
 
   const stepLabels = ["Winner", "Goals", "Both score", "Clean sheet", "Score"] as const;
   const stepValues = [winnerLabel, goalsLabel, btsLabel, csLabel, scoreLabel];
@@ -477,18 +494,7 @@ export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit }: ScriptSlot
             ))}
           </dl>
 
-          <label className="mt-4 block">
-            <span className="text-xs font-medium text-[var(--muted)]">Stake ($PLAY)</span>
-            <input
-              type="text"
-              inputMode="decimal"
-              disabled={!canEdit}
-              value={playStake}
-              onChange={(e) => setPlayStake(e.target.value.replace(/[^\d.]/g, ""))}
-              placeholder="0"
-              className="mt-1.5 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm tabular-nums outline-none focus:border-[var(--accent)]/50 disabled:opacity-50"
-            />
-          </label>
+          <PlayStakeField value={playStake} onChange={setPlayStake} disabled={!canEdit} />
 
           <div className="mt-4 border-t border-[var(--border)] pt-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
@@ -527,16 +533,21 @@ export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit }: ScriptSlot
             </p>
           </div>
 
-          <button
-            type="button"
-            disabled={!canLock}
-            className="mt-4 w-full rounded-lg bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--background)] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset] transition-[filter,opacity] hover:brightness-110 active:brightness-95 disabled:cursor-not-allowed disabled:bg-[var(--border)] disabled:text-[var(--muted)] disabled:opacity-70 disabled:shadow-none disabled:hover:brightness-100"
-          >
-            Lock script
-          </button>
-          {!canLock && canEdit ? (
+          <PlayscriptLockScriptButton
+            matchId={matchId}
+            picksPacked={picksPacked}
+            playStake={playStake}
+            formReady={formReadyLock}
+            canEdit={canEdit}
+          />
+          {canEdit && !scriptComplete ? (
             <p className="mt-2 text-center text-[11px] text-[var(--muted)]">
               Finish every slot to enable lock.
+            </p>
+          ) : null}
+          {canEdit && scriptComplete && stakeNum <= 0 ? (
+            <p className="mt-2 text-center text-[11px] text-[var(--muted)]">
+              Enter a PLAY stake, then lock on-chain.
             </p>
           ) : null}
         </div>

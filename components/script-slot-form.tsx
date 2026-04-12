@@ -11,6 +11,7 @@ import { ScriptSlotFormSoccer, type ScriptSlotFormBaseProps } from "./script-slo
 
 export type ScriptSlotFormProps = ScriptSlotFormBaseProps & {
   sportKey: ScriptSportKey;
+  matchId: number;
 };
 
 export function ScriptSlotForm({ sportKey, ...rest }: ScriptSlotFormProps) {

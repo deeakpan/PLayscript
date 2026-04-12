@@ -9,5 +9,10 @@
     "resolveJsonModule": true,
     "noEmit": true
   },
-  "include": ["./hardhat.config.ts", "./scripts/**/*.ts", "./test/**/*.ts"]
+  "include": [
+    "./types/hardhat-viem.d.ts",
+    "./hardhat.config.ts",
+    "./scripts/**/*.ts",
+    "./test/**/*.ts"
+  ]
 }

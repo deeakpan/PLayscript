@@ -115,6 +115,7 @@ export function mapApiEventToFixture(ev: ApiEvent): FixtureRow | null {
   const scores =
     hs !== null && as !== null ? { homeScore: hs, awayScore: as } : {};
 
+  const detail = ev.strStatus?.trim();
   return {
     id,
     league: (ev.strLeague ?? "—").trim() || "—",
@@ -125,6 +126,7 @@ export function mapApiEventToFixture(ev: ApiEvent): FixtureRow | null {
     status: mapStrStatus(ev.strStatus),
     ...(lid ? { sourceLeagueId: lid } : {}),
     ...scores,
+    ...(detail ? { statusDetail: detail } : {}),
   };
 }
 
