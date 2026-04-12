@@ -145,7 +145,7 @@ export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit, matchId }: S
 
   const showEstPayout = scriptComplete && stakeNum > 0;
   const fmtPlay = (v: number) =>
-    `${v.toLocaleString(undefined, { maximumFractionDigits: 2 })} PLAY`;
+    `${v.toLocaleString(undefined, { maximumFractionDigits: 2 })} $PLAY`;
   const estPayout5 = showEstPayout ? fmtPlay(stakeNum * MULT_5) : "—";
   const estPayout4 = showEstPayout ? fmtPlay(stakeNum * MULT_4) : "—";
 
@@ -547,7 +547,7 @@ export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit, matchId }: S
           ) : null}
           {canEdit && scriptComplete && stakeNum <= 0 ? (
             <p className="mt-2 text-center text-[11px] text-[var(--muted)]">
-              Enter a PLAY stake, then lock on-chain.
+              Enter a $PLAY stake, then lock on-chain.
             </p>
           ) : null}
         </div>

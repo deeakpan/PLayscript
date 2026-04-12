@@ -43,7 +43,7 @@ export function LeagueSelect({
   }, [open]);
 
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
+    <div className="flex w-full max-w-[min(100%,11rem)] min-w-0 flex-col gap-1.5 sm:max-w-none">
       {showLabel ? (
         <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
           {label}
@@ -56,7 +56,7 @@ export function LeagueSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full min-w-[min(100%,16rem)] items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-left text-sm text-[var(--foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[border-color,box-shadow,background-color] hover:border-[var(--dream-yellow)]/35 hover:bg-[var(--surface-hover)] focus:border-[var(--accent)]/55 focus:outline-none focus:ring-1 focus:ring-[var(--accent-glow)] sm:w-auto sm:min-w-[14rem]"
+        className="flex w-full items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-left text-sm text-[var(--foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[border-color,box-shadow,background-color] hover:border-[var(--dream-yellow)]/35 hover:bg-[var(--surface-hover)] focus:border-[var(--accent)]/55 focus:outline-none focus:ring-1 focus:ring-[var(--accent-glow)] sm:min-w-[14rem] sm:w-auto"
       >
         <span className="min-w-0 truncate font-medium">{current?.label ?? "—"}</span>
         {open ? (

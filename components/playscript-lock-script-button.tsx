@@ -51,6 +51,7 @@ export function PlayscriptLockScriptButton({
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [lockedOk, setLockedOk] = useState(false);
 
   const wrongChain = connected && chainId !== somniaTestnet.id;
 
@@ -68,6 +69,7 @@ export function PlayscriptLockScriptButton({
 
   const onClick = useCallback(async () => {
     setErr(null);
+    setLockedOk(false);
     if (picksPacked === null || !address || !walletClient || !publicClient || !contracts) return;
 
     let stakeWei: bigint;
@@ -156,6 +158,14 @@ export function PlayscriptLockScriptButton({
       ) : null}
       {err ? (
         <p className="mt-2 text-center text-[11px] leading-snug text-rose-300/90">{err}</p>
+      ) : null}
+      {lockedOk ? (
+        <p
+          className="mt-2 text-center text-xs font-medium text-emerald-400/95"
+          role="status"
+        >
+          Script locked on-chain. Your balance and match view will update in a moment.
+        </p>
       ) : null}
     </div>
   );

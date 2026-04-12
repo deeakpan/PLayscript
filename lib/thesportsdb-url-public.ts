@@ -16,3 +16,10 @@ export function buildLookupeventApiUrl(eventId: string): string {
   const id = eventId.trim();
   return `${getThesportsdbJsonBaseForClient()}/lookupevent.php?id=${encodeURIComponent(id)}`;
 }
+
+/** Extract TheSportsDB event id from a `lookupevent.php?id=…` URL (on-chain `matches_.url`). */
+export function parseLookupeventIdFromUrl(url: string): string | null {
+  const m = url.trim().match(/[?&]id=([^&]+)/i);
+  const id = m?.[1]?.trim();
+  return id && /^\d+$/.test(id) ? id : null;
+}

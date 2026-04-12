@@ -52,6 +52,13 @@ export const playscriptCoreWriteAbi = [
     ],
     outputs: [{ type: "uint256" }],
   },
+  {
+    type: "function",
+    name: "claimPayout",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "scriptId", type: "uint256" }],
+    outputs: [],
+  },
 ] as const;
 
 export const playscriptCoreReadAbi = [

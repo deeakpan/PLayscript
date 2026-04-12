@@ -21,7 +21,7 @@ export function PlayBalance() {
   if (loading) {
     return (
       <span className="shrink-0 font-mono text-xs font-semibold tabular-nums text-[var(--muted)] sm:text-sm">
-        … PLAY
+        … $PLAY
       </span>
     );
   }
@@ -48,10 +48,10 @@ export function PlayBalance() {
   return (
     <span
       className="shrink-0 max-w-[7.5rem] truncate font-mono text-xs font-semibold tabular-nums text-[var(--foreground)] sm:max-w-none sm:text-sm"
-      title={`${formatted} PLAY`}
+      title={`${formatted} $PLAY`}
     >
       {short}{" "}
-      <span className="font-semibold text-[var(--accent)]">PLAY</span>
+      <span className="font-semibold text-[var(--accent)]">$PLAY</span>
     </span>
   );
 }

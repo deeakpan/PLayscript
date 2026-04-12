@@ -66,7 +66,7 @@ export function PlayStakeField({ value, onChange, disabled }: Props) {
         <span className="font-mono font-semibold tabular-nums text-[var(--foreground)]">
           {formatted}
         </span>{" "}
-        <span className="font-semibold text-[var(--accent)]">PLAY</span>
+        <span className="font-semibold text-[var(--accent)]">$PLAY</span>
       </span>
     );
   }, [connected, envOk, data, loading, isError, error]);

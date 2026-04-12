@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  ArrowUpRight,
-  ChartLine,
-  Gear,
-  House,
-  List,
-  ListBullets,
-  SoccerBall,
-  X,
-} from "@phosphor-icons/react";
+import { ArrowUpRight, Gear, House, List, ListBullets, SoccerBall, X } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
@@ -20,9 +11,19 @@ import { PlayBalance } from "@/components/web3/play-balance";
 const nav = [
   { href: "/", label: "Matches", icon: House },
   { href: "/scripts", label: "My scripts", icon: ListBullets },
-  { href: "/markets", label: "Markets", icon: ChartLine },
   { href: "/settings", label: "Settings", icon: Gear },
 ] as const;
+
+function headerTitle(pathname: string): string {
+  if (pathname === "/" || pathname === "") return "Match center";
+  if (pathname === "/scripts") return "My scripts";
+  if (pathname === "/settings") return "Settings";
+  if (pathname === "/how-it-works") return "How it works";
+  if (pathname === "/docs" || pathname.startsWith("/docs/")) return "Docs";
+  if (pathname.startsWith("/fixtures/")) return "Fixture";
+  if (pathname === "/markets") return "Markets";
+  return "Match center";
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -127,15 +128,17 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
             </div>
             <h1 className="hidden min-w-0 truncate text-sm font-semibold tracking-tight text-[var(--foreground)] md:block">
-              Match center
+              {headerTitle(pathname)}
             </h1>
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-            <PlayBalance />
+            <div className="hidden md:block">
+              <PlayBalance />
+            </div>
             <Link
               href="/how-it-works"
-              className="text-xs font-medium text-[var(--muted)] transition-colors hover:text-[var(--dream-yellow)]"
+              className="hidden text-xs font-medium text-[var(--muted)] transition-colors hover:text-[var(--dream-yellow)] md:inline"
             >
               How it works
             </Link>

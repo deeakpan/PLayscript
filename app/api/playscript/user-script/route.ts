@@ -2,12 +2,23 @@ import { NextResponse } from "next/server";
 import { formatUnits, getAddress, isAddress } from "viem";
 
 import { findUserScriptForMatch } from "@/lib/playscript-find-user-script";
+import { claimPayoutPreview, gradePlayscriptSlots } from "@/lib/playscript-grade";
 import { getPlayscriptClientEnv } from "@/lib/playscript-public-env";
 import { createSomniaPublicClient } from "@/lib/playscript-read-onchain";
 import { playTokenReadAbi, playscriptCoreReadAbi } from "@/lib/playscript-onchain-abi";
+import { parseMatchesRead } from "@/lib/playscript-parse-match-read";
 import { describePackedPicks } from "@/lib/playscript-unpack-picks";
 
 export const dynamic = "force-dynamic";
+
+function jsonSettlement(parsed: NonNullable<ReturnType<typeof parseMatchesRead>>, chainNowUnix: number) {
+  const finalizeAtUnix = Number(parsed.kickoff) + parsed.finalizeDelaySec;
+  return {
+    finalizeAtUnix,
+    chainNowUnix,
+    settlementWindowOpen: chainNowUnix >= finalizeAtUnix,
+  };
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -34,32 +45,28 @@ export async function GET(req: Request) {
 
   try {
     const client = createSomniaPublicClient();
-    const matchRow = await client.readContract({
-      address: env.playscriptCore,
-      abi: playscriptCoreReadAbi,
-      functionName: "matches_",
-      args: [matchId],
-    });
+    const [matchRow, latestBlock] = await Promise.all([
+      client.readContract({
+        address: env.playscriptCore,
+        abi: playscriptCoreReadAbi,
+        functionName: "matches_",
+        args: [matchId],
+      }),
+      client.getBlock({ blockTag: "latest" }),
+    ]);
 
-    const row = matchRow as unknown;
-    let exists: boolean;
-    let settled: boolean;
-    let sportIndex: number;
-    if (Array.isArray(row)) {
-      sportIndex = Number(row[0]);
-      exists = Boolean(row[5]);
-      settled = Boolean(row[6]);
-    } else if (row && typeof row === "object") {
-      const o = row as Record<string, unknown>;
-      sportIndex = Number(o.sport ?? 0);
-      exists = Boolean(o.exists);
-      settled = Boolean(o.settled);
-    } else {
+    const parsed = parseMatchesRead(matchRow as unknown);
+    if (!parsed) {
       return NextResponse.json({ ok: false, error: "Unexpected matches_ shape." }, { status: 502 });
     }
-    if (!exists) {
+    if (!parsed.exists) {
       return NextResponse.json({ ok: false, error: "Match does not exist on-chain." }, { status: 404 });
     }
+
+    const chainNowUnix = Number(latestBlock.timestamp);
+    const settlement = jsonSettlement(parsed, chainNowUnix);
+    const settled = parsed.settled;
+    const sportIndex = parsed.sport;
 
     const found = await findUserScriptForMatch(env.playscriptCore, owner, matchId);
     if (!found) {
@@ -68,6 +75,7 @@ export async function GET(req: Request) {
         hasScript: false,
         matchSettled: settled,
         sportIndex,
+        settlement,
         script: null,
       });
     }
@@ -85,11 +93,51 @@ export async function GET(req: Request) {
     const stakeFormatted = formatUnits(script.stake, decimals);
     const slotPicks = describePackedPicks(sportIndex, script.picksPacked);
 
+    let grading: {
+      correctSlots: number;
+      rows: { label: string; yourPick: string; result: string; correct: boolean }[];
+      finalHome: string;
+      finalAway: string;
+    } | null = null;
+
+    let claim: {
+      winner: boolean;
+      tierLabel: string;
+      mintUserFormatted: string;
+      mintFeeFormatted: string;
+      mintUserWei: string;
+      mintFeeWei: string;
+      showClaimButton: boolean;
+    } | null = null;
+
+    if (settled) {
+      const g = gradePlayscriptSlots(sportIndex, script.picksPacked, parsed.finalHome, parsed.finalAway);
+      grading = {
+        correctSlots: g.correctSlots,
+        rows: g.rows,
+        finalHome: parsed.finalHome.toString(),
+        finalAway: parsed.finalAway.toString(),
+      };
+      const prev = claimPayoutPreview(g.correctSlots, script.stake);
+      claim = {
+        winner: prev.winner,
+        tierLabel: prev.tierLabel,
+        mintUserFormatted: formatUnits(prev.mintUserWei, decimals),
+        mintFeeFormatted: formatUnits(prev.mintFeeWei, decimals),
+        mintUserWei: prev.mintUserWei.toString(),
+        mintFeeWei: prev.mintFeeWei.toString(),
+        showClaimButton: !script.claimed,
+      };
+    }
+
     return NextResponse.json({
       ok: true,
       hasScript: true,
       matchSettled: settled,
       sportIndex,
+      settlement,
+      grading,
+      claim,
       script: {
         scriptId: scriptId.toString(),
         matchId: script.matchId.toString(),

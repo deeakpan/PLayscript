@@ -84,3 +84,35 @@ export async function findUserScriptForMatch(
 
   return null;
 }
+
+/** Newest script first (descending `scriptId`). */
+export async function findAllUserScriptsForOwner(
+  coreAddress: `0x${string}`,
+  owner: `0x${string}`,
+): Promise<{ scriptId: bigint; script: OnChainScriptRow }[]> {
+  const client = createSomniaPublicClient();
+  const ownerLc = getAddress(owner).toLowerCase();
+
+  const next = await client.readContract({
+    address: coreAddress,
+    abi: playscriptCoreReadAbi,
+    functionName: "nextScriptId",
+  });
+  const n = BigInt(next);
+
+  const out: { scriptId: bigint; script: OnChainScriptRow }[] = [];
+  for (let i = BigInt(0); i < n; i += BigInt(1)) {
+    const raw = await client.readContract({
+      address: coreAddress,
+      abi: playscriptCoreReadAbi,
+      functionName: "getScript",
+      args: [i],
+    });
+    const script = normalizeScript(raw);
+    if (!script) continue;
+    if (getAddress(script.owner).toLowerCase() !== ownerLc) continue;
+    out.push({ scriptId: i, script });
+  }
+
+  return out.reverse();
+}
