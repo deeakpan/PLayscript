@@ -12,6 +12,7 @@ import { SCRIPT_SLOTS } from "@/lib/script-slots";
 
 const MULT_5 = 3;
 const MULT_4 = 1.8;
+const MULT_3 = 1.2;
 
 type Winner = "home" | "draw" | "away";
 type OverUnder = "over" | "under";
@@ -148,6 +149,7 @@ export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit, matchId }: S
     `${v.toLocaleString(undefined, { maximumFractionDigits: 2 })} $PLAY`;
   const estPayout5 = showEstPayout ? fmtPlay(stakeNum * MULT_5) : "—";
   const estPayout4 = showEstPayout ? fmtPlay(stakeNum * MULT_4) : "—";
+  const estPayout3 = showEstPayout ? fmtPlay(stakeNum * MULT_3) : "—";
 
   const picksPacked = useMemo(() => {
     if (!winner || !totalGoals || !bts || !cleanSheet || !scoreComplete) return null;
@@ -513,6 +515,12 @@ export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit, matchId }: S
                 </span>
                 <span className="font-medium text-[var(--foreground)]">{estPayout4}</span>
               </p>
+              <p className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 tabular-nums">
+                <span className="text-[var(--muted)]">
+                  3/5 <span className="text-[var(--accent)]">· {MULT_3}×</span>
+                </span>
+                <span className="font-medium text-[var(--foreground)]">{estPayout3}</span>
+              </p>
             </div>
             {!showEstPayout ? (
               <p className="mt-2 text-[11px] leading-relaxed text-[var(--muted)]">
@@ -522,8 +530,10 @@ export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit, matchId }: S
               </p>
             ) : null}
             <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
-              At <span className="text-[var(--foreground)]">3/5</span> correct or below, there is no
-              payout — those stakes do not earn.{" "}
+              Gross mint uses <span className="text-[var(--foreground)]">3×</span>,{" "}
+              <span className="text-[var(--foreground)]">1.8×</span>, and{" "}
+              <span className="text-[var(--foreground)]">1.2×</span> stake for 5/5, 4/5, and 3/5
+              correct (before the 5% mint fee). Below 3/5 there is no mint.{" "}
               <Link
                 href="/how-it-works"
                 className="font-medium text-[var(--accent)] underline-offset-2 transition-colors hover:text-[var(--dream-yellow)] hover:underline"

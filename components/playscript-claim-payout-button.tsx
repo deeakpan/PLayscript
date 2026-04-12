@@ -12,9 +12,13 @@ import { getPlayscriptClientEnv } from "@/lib/playscript-public-env";
 type Props = {
   scriptId: string;
   disabled?: boolean;
+  /** Tighter spacing and smaller label when nested in compact cards */
+  compact?: boolean;
+  /** Called after a successful on-chain claim (e.g. close modal). */
+  onSuccess?: () => void;
 };
 
-export function PlayscriptClaimPayoutButton({ scriptId, disabled }: Props) {
+export function PlayscriptClaimPayoutButton({ scriptId, disabled, compact, onSuccess }: Props) {
   const queryClient = useQueryClient();
   const { address, status, chainId } = useConnection();
   const connected = status === "connected";
@@ -62,21 +66,24 @@ export function PlayscriptClaimPayoutButton({ scriptId, disabled }: Props) {
       await queryClient.invalidateQueries({ queryKey: ["play-balance-api"] });
       await queryClient.invalidateQueries({ queryKey: ["playscript-user-script"] });
       await queryClient.invalidateQueries({ queryKey: ["playscript-user-scripts"] });
+      onSuccess?.();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErr(msg.length > 220 ? `${msg.slice(0, 220)}…` : msg);
     } finally {
       setBusy(false);
     }
-  }, [address, contracts, publicClient, queryClient, scriptId, walletClient]);
+  }, [address, contracts, onSuccess, publicClient, queryClient, scriptId, walletClient]);
 
   return (
-    <div className="mt-3">
+    <div className={compact ? "mt-1.5" : "mt-3"}>
       <button
         type="button"
         disabled={btnDisabled}
         onClick={() => void onClick()}
-        className="w-full rounded-lg bg-[var(--accent)] py-2 text-sm font-semibold text-[var(--background)] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset] transition-[filter,opacity] hover:brightness-110 active:brightness-95 disabled:cursor-not-allowed disabled:bg-[var(--border)] disabled:text-[var(--muted)] disabled:opacity-70 disabled:shadow-none disabled:hover:brightness-100"
+        className={`w-full rounded-lg bg-[var(--accent)] font-semibold text-[var(--background)] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset] transition-[filter,opacity] hover:brightness-110 active:brightness-95 disabled:cursor-not-allowed disabled:bg-[var(--border)] disabled:text-[var(--muted)] disabled:opacity-70 disabled:shadow-none disabled:hover:brightness-100 ${
+          compact ? "py-1.5 text-xs" : "py-2 text-sm"
+        }`}
       >
         {busy ? "Confirm in wallet…" : "Claim payout"}
       </button>

@@ -10,6 +10,10 @@ import { parseLookupeventIdFromUrl } from "@/lib/thesportsdb-url-public";
 
 export const dynamic = "force-dynamic";
 
+function sleepMs(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 type SelTeams = { homeTeam: string; awayTeam: string };
 
 function readSelTeams(row: unknown): SelTeams {
@@ -104,52 +108,70 @@ export async function GET(req: Request) {
 
     const rows = await findAllUserScriptsForOwner(env.playscriptCore, owner);
 
-    const scripts = await Promise.all(
-      rows.map(async ({ scriptId, script }) => {
-        const matchRow = await client.readContract({
-          address: env.playscriptCore,
-          abi: playscriptCoreReadAbi,
-          functionName: "matches_",
-          args: [script.matchId],
-        });
-        const m = readMatchListFields(matchRow as unknown);
-        const eventId = m.url ? parseLookupeventIdFromUrl(m.url) : null;
-        const stakeFormatted = formatUnits(script.stake, decimals);
+    const scripts: {
+      scriptId: string;
+      matchId: string;
+      sportIndex: number;
+      stake: string;
+      stakeFormatted: string;
+      decimals: number;
+      claimed: boolean;
+      matchExists: boolean;
+      matchSettled: boolean;
+      matchUrl: string;
+      eventId: string | null;
+      sourceLeagueId: string | null;
+      homeTeam: string;
+      awayTeam: string;
+    }[] = [];
 
-        let homeTeam = m.homeTeam.trim();
-        let awayTeam = m.awayTeam.trim();
-        let sourceLeagueId: string | undefined;
-        if (looksLikeAgentSelectorPath(homeTeam) || looksLikeAgentSelectorPath(awayTeam)) {
-          homeTeam = "";
-          awayTeam = "";
-        }
-        if (eventId) {
-          const fixture = await fetchFixtureByEventId(eventId);
-          if (fixture) {
-            homeTeam = fixture.home.trim();
-            awayTeam = fixture.away.trim();
-            sourceLeagueId = fixture.sourceLeagueId?.trim() || undefined;
-          }
-        }
+    for (let i = 0; i < rows.length; i++) {
+      const { scriptId, script } = rows[i]!;
+      if (i > 0) await sleepMs(280);
 
-        return {
-          scriptId: scriptId.toString(),
-          matchId: script.matchId.toString(),
-          sportIndex: m.sport,
-          stake: script.stake.toString(),
-          stakeFormatted,
-          decimals,
-          claimed: script.claimed,
-          matchExists: m.exists,
-          matchSettled: m.settled,
-          matchUrl: m.url,
-          eventId,
-          sourceLeagueId: sourceLeagueId ?? null,
-          homeTeam,
-          awayTeam,
-        };
-      }),
-    );
+      const matchRow = await client.readContract({
+        address: env.playscriptCore,
+        abi: playscriptCoreReadAbi,
+        functionName: "matches_",
+        args: [script.matchId],
+      });
+      const m = readMatchListFields(matchRow as unknown);
+      const eventId = m.url ? parseLookupeventIdFromUrl(m.url) : null;
+      const stakeFormatted = formatUnits(script.stake, decimals);
+
+      let homeTeam = m.homeTeam.trim();
+      let awayTeam = m.awayTeam.trim();
+      let sourceLeagueId: string | undefined;
+      if (looksLikeAgentSelectorPath(homeTeam) || looksLikeAgentSelectorPath(awayTeam)) {
+        homeTeam = "";
+        awayTeam = "";
+      }
+      if (eventId) {
+        const fixture = await fetchFixtureByEventId(eventId);
+        if (fixture) {
+          homeTeam = fixture.home.trim();
+          awayTeam = fixture.away.trim();
+          sourceLeagueId = fixture.sourceLeagueId?.trim() || undefined;
+        }
+      }
+
+      scripts.push({
+        scriptId: scriptId.toString(),
+        matchId: script.matchId.toString(),
+        sportIndex: m.sport,
+        stake: script.stake.toString(),
+        stakeFormatted,
+        decimals,
+        claimed: script.claimed,
+        matchExists: m.exists,
+        matchSettled: m.settled,
+        matchUrl: m.url,
+        eventId,
+        sourceLeagueId: sourceLeagueId ?? null,
+        homeTeam,
+        awayTeam,
+      });
+    }
 
     return NextResponse.json({ ok: true, scripts });
   } catch (e: unknown) {

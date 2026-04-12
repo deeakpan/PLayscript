@@ -15,8 +15,50 @@ import {
 export const THESPORTSDB_JSON_BASE =
   "https://www.thesportsdb.com/api/v1/json/123";
 
-/** Data-cache TTL for listings + per-event fixture resolution (~3 origin hits/min at peak). */
-export const THESPORTSDB_LIST_REVALIDATE_SEC = 20;
+/** Data-cache TTL for listings + per-event fixture resolution. */
+export const THESPORTSDB_LIST_REVALIDATE_SEC = 90;
+
+const RETRYABLE_STATUS = new Set([408, 429, 502, 503]);
+const FETCH_MAX_ATTEMPTS = 6;
+const FETCH_BASE_DELAY_MS = 900;
+/** Space out league calls so we do not burst TheSportsDB free tier (429). */
+const BETWEEN_LEAGUE_MS = 320;
+/** After retries, treat these as empty feed instead of failing the whole request (home / scripts). */
+const SOFT_FAIL_STATUS = new Set([429, 502, 503]);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Fetch with backoff on rate-limit / transient errors. Honors `Retry-After` when sensible.
+ */
+async function fetchTheSportsDb(
+  url: string,
+  init?: RequestInit & { next?: { revalidate?: number | false } },
+): Promise<Response> {
+  let last: Response | undefined;
+  for (let attempt = 0; attempt < FETCH_MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(url, init);
+    last = res;
+    if (res.ok) return res;
+    if (!RETRYABLE_STATUS.has(res.status)) return res;
+
+    if (attempt === FETCH_MAX_ATTEMPTS - 1) break;
+
+    let delay = FETCH_BASE_DELAY_MS * 2 ** attempt;
+    const ra = res.headers.get("retry-after");
+    if (ra) {
+      const sec = Number.parseInt(ra, 10);
+      if (Number.isFinite(sec) && sec >= 0) {
+        delay = Math.min(15_000, Math.max(delay, sec * 1000));
+      }
+    }
+    delay += Math.floor(Math.random() * 400);
+    await sleep(delay);
+  }
+  return last!;
+}
 
 export type FetchFixtureByEventIdOptions = {
   /** When set, scan that league’s `eventsnextleague` list first (same source as the home table). */
@@ -137,11 +179,14 @@ export function mapApiEventToFixture(ev: ApiEvent): FixtureRow | null {
 
 export async function fetchUpcomingFixtures(leagueId: string): Promise<FixtureRow[]> {
   const url = `${THESPORTSDB_JSON_BASE}/eventsnextleague.php?id=${encodeURIComponent(leagueId)}`;
-  const res = await fetch(url, {
+  const res = await fetchTheSportsDb(url, {
     next: { revalidate: THESPORTSDB_LIST_REVALIDATE_SEC },
   });
   if (!res.ok) {
-    throw new Error(`TheSportsDB HTTP ${res.status}`);
+    if (SOFT_FAIL_STATUS.has(res.status)) {
+      return [];
+    }
+    throw new Error(`TheSportsDB HTTP ${res.status} (${url})`);
   }
   const json: { events?: ApiEvent[] | null } = await res.json();
   const raw = json.events;
@@ -160,7 +205,11 @@ export async function fetchUpcomingFixturesMerged(
   leagueIds: readonly string[],
 ): Promise<FixtureRow[]> {
   if (leagueIds.length === 0) return [];
-  const lists = await Promise.all(leagueIds.map((id) => fetchUpcomingFixtures(id)));
+  const lists: FixtureRow[][] = [];
+  for (let i = 0; i < leagueIds.length; i++) {
+    if (i > 0) await sleep(BETWEEN_LEAGUE_MS);
+    lists.push(await fetchUpcomingFixtures(leagueIds[i]!));
+  }
   const merged = new Map<string, FixtureRow>();
   for (const list of lists) {
     for (const f of list) {
@@ -180,10 +229,24 @@ export async function fetchUpcomingFixturesAll(): Promise<FixtureRow[]> {
 /**
  * Resolve a fixture by TheSportsDB `idEvent` (our `FixtureRow.id`).
  *
- * Order: (1) upcoming list for `leagueId` hint if valid, (2) merged upcoming across configured
- * leagues, (3) `lookupevent.php` **only** if the API returns the same `idEvent` (free tier often
- * maps new ids to unrelated historical events).
+ * Order: (1) upcoming list for `leagueId` hint if valid, (2) `lookupevent.php` when `idEvent`
+ * matches (cheap single call — used heavily by scripts API), (3) merged upcoming across leagues
+ * only if still missing (soft-fails per league on 429 so we do not crash the app).
  */
+async function tryLookupeventFixture(eventId: string): Promise<FixtureRow | null> {
+  const id = eventId.trim();
+  const lookupUrl = `${THESPORTSDB_JSON_BASE}/lookupevent.php?id=${encodeURIComponent(id)}`;
+  const res = await fetchTheSportsDb(lookupUrl, {
+    next: { revalidate: THESPORTSDB_LIST_REVALIDATE_SEC },
+  });
+  if (!res.ok) return null;
+  const json: { events?: ApiEvent[] | null } = await res.json();
+  const ev = json.events?.[0];
+  const returnedId = ev?.idEvent?.trim();
+  if (!ev || returnedId !== id) return null;
+  return mapApiEventToFixture(ev);
+}
+
 async function fetchFixtureByEventIdUncached(
   eventId: string,
   options?: FetchFixtureByEventIdOptions,
@@ -199,22 +262,19 @@ async function fetchFixtureByEventIdUncached(
     const rows = await fetchUpcomingFixtures(hint!);
     const hit = rows.find((f) => f.id === id);
     if (hit) return hit;
+  } else {
+    const fromLookupFirst = await tryLookupeventFixture(id);
+    if (fromLookupFirst) return fromLookupFirst;
   }
+
+  const fromLookup = useHint ? await tryLookupeventFixture(id) : null;
+  if (fromLookup) return fromLookup;
 
   const merged = await fetchUpcomingFixturesAll();
   const fromMerged = merged.find((f) => f.id === id);
   if (fromMerged) return fromMerged;
 
-  const lookupUrl = `${THESPORTSDB_JSON_BASE}/lookupevent.php?id=${encodeURIComponent(id)}`;
-  const res = await fetch(lookupUrl, {
-    next: { revalidate: THESPORTSDB_LIST_REVALIDATE_SEC },
-  });
-  if (!res.ok) return null;
-  const json: { events?: ApiEvent[] | null } = await res.json();
-  const ev = json.events?.[0];
-  const returnedId = ev?.idEvent?.trim();
-  if (!ev || returnedId !== id) return null;
-  return mapApiEventToFixture(ev);
+  return null;
 }
 
 /** One shared server cache entry per `idEvent` (all visitors reuse for `THESPORTSDB_LIST_REVALIDATE_SEC`). */

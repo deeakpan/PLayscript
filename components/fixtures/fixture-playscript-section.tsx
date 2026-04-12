@@ -16,6 +16,8 @@ type Props = {
   homeTeam: string;
   awayTeam: string;
   canEdit: boolean;
+  /** False once wall-clock is past fixture kickoff — hide builder entirely for users without a script */
+  kickoffOpen: boolean;
   sportKey: ScriptSportKey;
 };
 
@@ -24,6 +26,7 @@ export function FixturePlayscriptSection({
   homeTeam,
   awayTeam,
   canEdit,
+  kickoffOpen,
   sportKey,
 }: Props) {
   const env = getPlayscriptClientEnv();
@@ -104,10 +107,12 @@ export function FixturePlayscriptSection({
       {checkingUserScript ? (
         <FixturePlayscriptInlineSpinner label="Loading your on-chain script for this match…" />
       ) : userScriptQ.data?.hasScript === true ? (
-        <FixtureExistingScriptCard
-          matchIdDisplay={matchId.toString()}
-          payload={userScriptQ.data}
-        />
+        <FixtureExistingScriptCard payload={userScriptQ.data} />
+      ) : !kickoffOpen ? (
+        <p className="max-w-xl text-sm text-[var(--muted)]">
+          Kickoff has passed for this fixture — the script builder is closed. You cannot lock a new
+          script for this match.
+        </p>
       ) : (
         <>
           {userScriptQ.isError ? (
