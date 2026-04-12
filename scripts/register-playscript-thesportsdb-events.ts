@@ -29,6 +29,9 @@ function sportEnumFromLeagueId(leagueId: string): number {
  *   - 2371637 — NBA (league 4387)
  *   - 2279694 — La Liga (league 4335)
  *
+ * Override events (comma-separated `eventId:leagueId` — league id maps sport, see `LEAGUE_ID_TO_SPORT_ENUM`):
+ *   `PLAYSCRIPT_REGISTER_PAIRS=2274928:4396,2452576:4480`
+ *
  * On-chain JSON URL: `lookupevent.php?id=<eventId>` — selectors use `events[0].…`.
  *
  * `.env`: `PLAYSCRIPT_CORE_ADDRESS`, `PRIVATE_KEY` (core owner).
@@ -52,6 +55,25 @@ const DEFAULT_EVENTS: readonly { eventId: string; leagueHint: string }[] = [
   { eventId: "2371637", leagueHint: "4387" },
   { eventId: "2279694", leagueHint: "4335" },
 ];
+
+function getEventsToRegister(): { eventId: string; leagueHint: string }[] {
+  const raw = process.env.PLAYSCRIPT_REGISTER_PAIRS?.trim();
+  if (!raw) return [...DEFAULT_EVENTS];
+  const out: { eventId: string; leagueHint: string }[] = [];
+  for (const part of raw.split(",")) {
+    const s = part.trim();
+    if (!s) continue;
+    const bits = s.split(":").map((x) => x.trim());
+    if (bits.length !== 2 || !bits[0] || !bits[1]) {
+      throw new Error(
+        `PLAYSCRIPT_REGISTER_PAIRS bad segment "${part}" — use eventId:leagueId (e.g. 2274928:4396).`,
+      );
+    }
+    out.push({ eventId: bits[0]!, leagueHint: bits[1]! });
+  }
+  if (out.length === 0) throw new Error("PLAYSCRIPT_REGISTER_PAIRS produced no events.");
+  return out;
+}
 
 function kickoffUtcIso(ev: ApiEvent): string {
   const ts = ev.strTimestamp?.trim();
@@ -108,10 +130,13 @@ async function main() {
   const baseJsonUrl = `https://www.thesportsdb.com/api/v1/json/${THESPORTSDB_KEY}/lookupevent.php`;
   const onChainUrl = (id: string) => `${baseJsonUrl}?id=${encodeURIComponent(id)}`;
 
-  console.log("TheSportsDB key:", THESPORTSDB_KEY);
-  console.log("finalizeDelaySec:", FINALIZE_DELAY_SEC, "(3h after kickoff)\n");
+  const events = getEventsToRegister();
 
-  for (const { eventId, leagueHint } of DEFAULT_EVENTS) {
+  console.log("TheSportsDB key:", THESPORTSDB_KEY);
+  console.log("finalizeDelaySec:", FINALIZE_DELAY_SEC, "(3h after kickoff)");
+  console.log("events:", events.map((e) => `${e.eventId}:${e.leagueHint}`).join(", "), "\n");
+
+  for (const { eventId, leagueHint } of events) {
     const ev = await lookupEvent(eventId);
     const iso = kickoffUtcIso(ev);
     const kickoff = BigInt(Math.floor(new Date(iso).getTime() / 1000));
