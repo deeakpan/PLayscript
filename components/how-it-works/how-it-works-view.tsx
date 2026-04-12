@@ -1,0 +1,360 @@
+"use client";
+
+import type { ReactNode } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import {
+  getScriptSlots,
+  SCRIPT_SLOT_PACKS_ORDER,
+  SCRIPT_SPORT_TITLES,
+} from "@/lib/script-slots";
+
+const SPORT_KEYS = SCRIPT_SLOT_PACKS_ORDER;
+
+const SCROLL_SPY_IDS = [
+  "overview",
+  "tokens",
+  "slots",
+  "sports",
+  "agent",
+  "grading",
+  "payouts",
+  "odds",
+  ...SPORT_KEYS.map((k) => `sport-${k}`),
+] as const;
+
+type TocGroup = {
+  label: string;
+  items: { id: string; label: string }[];
+};
+
+const TOC_GROUPS: TocGroup[] = [
+  {
+    label: "Start here",
+    items: [
+      { id: "overview", label: "Overview" },
+      { id: "tokens", label: "$PLAY & stakes" },
+      { id: "slots", label: "Five slots" },
+    ],
+  },
+  {
+    label: "Sports",
+    items: [
+      { id: "sports", label: "How sports differ" },
+      ...SPORT_KEYS.map((k) => ({
+        id: `sport-${k}`,
+        label: SCRIPT_SPORT_TITLES[k],
+      })),
+    ],
+  },
+  {
+    label: "Settlement & payouts",
+    items: [
+      { id: "agent", label: "Settlement & agent" },
+      { id: "grading", label: "Grading" },
+      { id: "payouts", label: "Payouts & claim" },
+      { id: "odds", label: "What “odds” means here" },
+    ],
+  },
+];
+
+function useActiveSectionId() {
+  const [active, setActive] = useState("overview");
+
+  const update = useCallback(() => {
+    const headerPad = 96;
+    const y = window.scrollY + headerPad;
+    let current: string = SCROLL_SPY_IDS[0]!;
+    for (const id of SCROLL_SPY_IDS) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      if (el.offsetTop <= y) current = id;
+    }
+    setActive(current);
+  }, []);
+
+  useEffect(() => {
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [update]);
+
+  return active;
+}
+
+function TocNav({ activeId }: { activeId: string }) {
+  return (
+    <nav
+      aria-label="On this page"
+      className="rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto"
+    >
+      <p className="px-1 pb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+        On this page
+      </p>
+      <div className="flex flex-col gap-5">
+        {TOC_GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]/90">
+              {group.label}
+            </p>
+            <ul className="flex flex-col gap-0.5 border-l border-[var(--border)]/80 pl-2">
+              {group.items.map((item) => {
+                const on = activeId === item.id;
+                return (
+                  <li key={item.id}>
+                    <a
+                      href={`#${item.id}`}
+                      className={`block rounded-r-md py-1.5 pl-2 pr-1 text-xs font-medium transition-colors ${
+                        on
+                          ? "border-l-2 border-[var(--accent)] bg-[var(--surface-active)]/50 text-[var(--foreground)] -ml-px pl-[calc(0.5rem-2px)]"
+                          : "border-l-2 border-transparent text-[var(--muted)] hover:text-[var(--dream-yellow)]"
+                      }`}
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+function Prose({ children }: { children: ReactNode }) {
+  return (
+    <div className="max-w-2xl space-y-3 text-sm leading-relaxed text-[var(--muted)] [&_strong]:font-semibold [&_strong]:text-emerald-400/85 [&_code]:rounded-md [&_code]:border [&_code]:border-[var(--border)]/80 [&_code]:bg-[var(--surface)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[11px] [&_code]:text-emerald-200/80">
+      {children}
+    </div>
+  );
+}
+
+/** Clear break between major sections (top rule + space). */
+function SectionBreak() {
+  return (
+    <div
+      className="my-14 w-full border-t-2 border-[var(--border)] opacity-90 sm:my-16"
+      aria-hidden
+    />
+  );
+}
+
+function MajorSection({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-24 space-y-3">
+      <h2 className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-xl font-semibold tracking-tight text-[var(--foreground)] sm:text-2xl">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+export function HowItWorksView() {
+  const activeId = useActiveSectionId();
+
+  return (
+    <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[15rem_1fr]">
+      <TocNav activeId={activeId} />
+
+      <article className="min-w-0">
+        <header className="space-y-4">
+          <h1
+            id="overview"
+            className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] scroll-mt-24 text-3xl font-semibold tracking-tight text-[var(--foreground)] sm:text-4xl"
+          >
+            How it works
+          </h1>
+          <Prose>
+            <p>
+              <strong>Playscript</strong> is a <strong>PROTOCOL</strong> for sports scenarios: you choose
+              five outcomes before kickoff, stake <strong>$PLAY</strong>, and the same rules settle everyone
+              on-chain. The app is a front-end to that protocol — match lists come from{" "}
+              <strong>TheSportsDB</strong>; final scores used for grading are whatever the PROTOCOL records
+              after <strong>settlement</strong> (see below).
+            </p>
+          </Prose>
+        </header>
+
+        <SectionBreak />
+
+        <MajorSection id="tokens" title="$PLAY & stakes">
+          <Prose>
+            <p>
+              Stakes are in the <strong>PLAY</strong> token ($PLAY in
+              the UI). Before your first lock, the PROTOCOL needs a standard ERC-20 allowance to the core
+              contract so it can pull your stake. Amounts respect PLAY decimals on-chain.
+            </p>
+            <p>
+              Your stake is locked until you <strong>claim</strong>{" "}
+              after the match is settled: claiming always moves your full stake to the PROTOCOL treasury;
+              winners additionally receive newly minted PLAY according to the tier you hit (see Payouts).
+            </p>
+          </Prose>
+        </MajorSection>
+
+        <SectionBreak />
+
+        <MajorSection id="slots" title="Five slots">
+          <Prose>
+            <p>
+              Each script has <strong>exactly five slots</strong>, in
+              order. You complete all five and your stake before kickoff. The PROTOCOL allows{" "}
+              <strong>one locked script per wallet per match</strong>.
+            </p>
+            <p>
+              Picks are packed into a single on-chain value; you get a deterministic{" "}
+              <strong>choices receipt</strong> (hash) anyone can
+              verify against <code>matchId</code>, sport, and
+              picks.
+            </p>
+            <p>
+              Slot wording and lines (totals, margins, etc.) depend on the match&apos;s sport — the same
+              five indices exist for every sport, but the questions and cutoffs change (see Sports).
+            </p>
+          </Prose>
+        </MajorSection>
+
+        <SectionBreak />
+
+        <MajorSection id="sports" title="How sports differ">
+          <Prose>
+            <p>
+              The PROTOCOL stores a <strong>sport enum</strong> per
+              match: football (soccer), basketball (NBA ruleset), American football (NFL ruleset), baseball
+              (MLB ruleset). That choice drives which five-slot pack you see in the app and how each slot is
+              graded against the final result.
+            </p>
+            <p>
+              Fixtures in the app are tagged with a sport so you only build scripts that match how that
+              league is wired on-chain.
+            </p>
+          </Prose>
+        </MajorSection>
+
+        <SectionBreak />
+
+        <MajorSection id="agent" title="Settlement & agent">
+          <Prose>
+            <p>
+              After kickoff and a <strong>finalize delay</strong>{" "}
+              defined per match, the match can be <strong>settled</strong>.
+              Settlement is not “someone typing the score in the app.” The PROTOCOL issues parallel{" "}
+              <strong>JSON API agent</strong> requests against the
+              match&apos;s <strong>TheSportsDB event URL</strong>,
+              using stored selector paths (e.g. where home/away scores live in that JSON). When every
+              required field returns successfully, the PROTOCOL writes{" "}
+              <strong>final home and away numbers</strong> on-chain and
+              marks the match settled.
+            </p>
+            <p>
+              Triggering settlement requires attaching the native{" "}
+              <strong>gas/deposit</strong> the agent platform charges for
+              those reads (five requests). If any read fails, settlement does not complete — the match stays
+              unsettled until a successful retry path exists.
+            </p>
+            <p>
+              <strong>You</strong> don&apos;t run the agent by hand;
+              you only need to know that{" "}
+              <strong>grading uses those on-chain finals</strong>, not
+              a third-party score widget in the app.
+            </p>
+          </Prose>
+        </MajorSection>
+
+        <SectionBreak />
+
+        <MajorSection id="grading" title="Grading">
+          <Prose>
+            <p>
+              Once settled, each slot is checked against the official finals: winner, totals vs the line,
+              yes/no props, and (for football) exact score where applicable. You get a count of how many of
+              the five you got right — that count alone drives the payout tier, not a separate “ticket
+              price.”
+            </p>
+          </Prose>
+        </MajorSection>
+
+        <SectionBreak />
+
+        <MajorSection id="payouts" title="Payouts & claim">
+          <Prose>
+            <p>
+              After settlement, you call <strong>claim</strong> on the
+              PROTOCOL for your script. On every claim, your full stake is transferred to the treasury.
+            </p>
+            <p>
+              If you had <strong>3, 4, or 5</strong> slots correct, the
+              PROTOCOL also <strong>mints</strong> PLAY to you and a
+              small mint fee to the treasury: effectively <strong>about
+              1.2×</strong>, <strong>1.8×</strong>, or{" "}
+              <strong>3×</strong> your stake as the gross mint pool for
+              3/5, 4/5, and 5/5 respectively (before the mint fee slice).{" "}
+              <strong>Below 3/5</strong> there is no mint — you still
+              claim so the stake path completes; you simply receive no extra PLAY for that script.
+            </p>
+          </Prose>
+        </MajorSection>
+
+        <SectionBreak />
+
+        <MajorSection id="odds" title="What “odds” means here">
+          <Prose>
+            <p>
+              The app may show <strong>illustrative</strong> amounts
+              when you type a stake — those are <strong>not bookmaker
+              odds</strong>. They are rough multipliers so you can picture 4/5 vs 5/5 under PROTOCOL rules.
+              Edge cases, rounding, and the mint fee are defined by the contract, not the preview text.
+            </p>
+          </Prose>
+        </MajorSection>
+
+        {SPORT_KEYS.map((sportKey) => {
+          const slots = getScriptSlots(sportKey);
+          const title = SCRIPT_SPORT_TITLES[sportKey];
+          return (
+            <div key={sportKey}>
+              <SectionBreak />
+              <section id={`sport-${sportKey}`} className="scroll-mt-24 space-y-6">
+                <h2 className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-xl font-semibold tracking-tight text-[var(--foreground)] sm:text-2xl">
+                  {title}
+                </h2>
+                <p className="max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
+                  Five slots for this pack. Each line is graded against settled finals — no separate boxes,
+                  same order as in the script builder.
+                </p>
+                <div className="max-w-2xl divide-y divide-[var(--border)]/90">
+                  {slots.map((s) => (
+                    <div key={s.anchor} id={s.anchor} className="scroll-mt-24 py-4 first:pt-0">
+                      <h3 className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-lg font-semibold tracking-tight text-[var(--foreground)]">
+                        <span className="mr-2 font-mono text-sm tabular-nums text-[var(--accent)]">
+                          {s.index}.
+                        </span>
+                        {s.title}
+                      </h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted)]">{s.outcomes}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          );
+        })}
+      </article>
+    </div>
+  );
+}

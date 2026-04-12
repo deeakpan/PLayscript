@@ -1,6 +1,15 @@
 "use client";
 
-import { ArrowUpRight, Gear, House, List, ListBullets, SoccerBall, X } from "@phosphor-icons/react";
+import {
+  ArrowUpRight,
+  BookOpen,
+  Gear,
+  House,
+  List,
+  ListBullets,
+  SoccerBall,
+  X,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
@@ -11,6 +20,7 @@ import { PlayBalance } from "@/components/web3/play-balance";
 const nav = [
   { href: "/", label: "Matches", icon: House },
   { href: "/scripts", label: "My scripts", icon: ListBullets },
+  { href: "/how-it-works", label: "How it works", icon: BookOpen },
   { href: "/settings", label: "Settings", icon: Gear },
 ] as const;
 
