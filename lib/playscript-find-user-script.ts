@@ -116,3 +116,34 @@ export async function findAllUserScriptsForOwner(
 
   return out.reverse();
 }
+
+/** Global receipt lookup (not owner-bound). Newest script wins if duplicates exist. */
+export async function findScriptByReceipt(
+  coreAddress: `0x${string}`,
+  receipt: `0x${string}`,
+): Promise<{ scriptId: bigint; script: OnChainScriptRow } | null> {
+  const client = createSomniaPublicClient();
+  const receiptLc = receipt.toLowerCase();
+
+  const next = await client.readContract({
+    address: coreAddress,
+    abi: playscriptCoreReadAbi,
+    functionName: "nextScriptId",
+  });
+  const n = BigInt(next);
+
+  for (let i = n - BigInt(1); i >= BigInt(0); i -= BigInt(1)) {
+    const raw = await client.readContract({
+      address: coreAddress,
+      abi: playscriptCoreReadAbi,
+      functionName: "getScript",
+      args: [i],
+    });
+    const script = normalizeScript(raw);
+    if (!script) continue;
+    if (script.choicesReceipt.toLowerCase() !== receiptLc) continue;
+    return { scriptId: i, script };
+  }
+
+  return null;
+}

@@ -24,6 +24,8 @@ export type ScriptSlotFormBaseProps = {
   canEdit: boolean;
   /** On-chain match id from `PlayscriptCore` (fixture section resolves by URL). */
   matchId: number;
+  /** Optional packed picks to prefill all 5 slots from a known receipt lookup. */
+  prefillPicksPacked?: bigint | null;
 };
 
 function HowItWorksTitle({ anchor, children }: { anchor: string; children: React.ReactNode }) {
@@ -86,15 +88,37 @@ function canAccessStep(
   return true;
 }
 
-export function ScriptSlotFormSoccer({ homeTeam, awayTeam, canEdit, matchId }: ScriptSlotFormBaseProps) {
-  const [winner, setWinner] = useState<Winner | null>(null);
-  const [totalGoals, setTotalGoals] = useState<OverUnder | null>(null);
-  const [bts, setBts] = useState<YesNo | null>(null);
-  const [cleanSheet, setCleanSheet] = useState<YesNo | null>(null);
-  const [scoreHome, setScoreHome] = useState("");
-  const [scoreAway, setScoreAway] = useState("");
+export function ScriptSlotFormSoccer({
+  homeTeam,
+  awayTeam,
+  canEdit,
+  matchId,
+  prefillPicksPacked,
+}: ScriptSlotFormBaseProps) {
+  const prefill = useMemo(() => {
+    if (prefillPicksPacked === null || prefillPicksPacked === undefined) return null;
+    const p = prefillPicksPacked;
+    const wRaw = Number(p & BigInt(3));
+    const winner: Winner | null = wRaw === 0 ? "home" : wRaw === 1 ? "draw" : wRaw === 2 ? "away" : null;
+    if (!winner) return null;
+    return {
+      winner,
+      totalGoals: ((p >> BigInt(2)) & BigInt(1)) === BigInt(1) ? ("over" as const) : ("under" as const),
+      bts: ((p >> BigInt(3)) & BigInt(1)) === BigInt(1) ? ("yes" as const) : ("no" as const),
+      cleanSheet: ((p >> BigInt(4)) & BigInt(1)) === BigInt(1) ? ("yes" as const) : ("no" as const),
+      scoreHome: Number((p >> BigInt(8)) & BigInt(255)).toString(),
+      scoreAway: Number((p >> BigInt(16)) & BigInt(255)).toString(),
+    };
+  }, [prefillPicksPacked]);
+
+  const [winner, setWinner] = useState<Winner | null>(prefill?.winner ?? null);
+  const [totalGoals, setTotalGoals] = useState<OverUnder | null>(prefill?.totalGoals ?? null);
+  const [bts, setBts] = useState<YesNo | null>(prefill?.bts ?? null);
+  const [cleanSheet, setCleanSheet] = useState<YesNo | null>(prefill?.cleanSheet ?? null);
+  const [scoreHome, setScoreHome] = useState(prefill?.scoreHome ?? "");
+  const [scoreAway, setScoreAway] = useState(prefill?.scoreAway ?? "");
   const [playStake, setPlayStake] = useState("");
-  const [activeStep, setActiveStep] = useState(1);
+  const [activeStep, setActiveStep] = useState(prefill ? 5 : 1);
 
   const scoreComplete = useMemo(() => {
     const h = scoreHome.trim();

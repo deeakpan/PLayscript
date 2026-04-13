@@ -24,6 +24,27 @@ type Winner3 = "home" | "draw" | "away" | null;
 type OverUnder = "over" | "under";
 type YesNo = "yes" | "no";
 
+function decodeBinaryWinner(wRaw: number): Winner2 {
+  if (wRaw === 0) return "home";
+  if (wRaw === 1) return "away";
+  return null;
+}
+
+function decodeTernaryWinner(wRaw: number): Winner3 {
+  if (wRaw === 0) return "home";
+  if (wRaw === 1) return "away";
+  if (wRaw === 2) return "draw";
+  return null;
+}
+
+function decodeOverUnder(packed: bigint): OverUnder {
+  return ((packed >> BigInt(2)) & BigInt(1)) === BigInt(1) ? "over" : "under";
+}
+
+function decodeYesNo(packed: bigint, bitIndex: number): YesNo {
+  return ((packed >> BigInt(bitIndex)) & BigInt(1)) === BigInt(1) ? "yes" : "no";
+}
+
 function HowItWorksTitle({ anchor, children }: { anchor: string; children: React.ReactNode }) {
   return (
     <Link
@@ -331,16 +352,35 @@ function ScriptFormShell({
   );
 }
 
-export function ScriptSlotFormBasketball({ homeTeam, awayTeam, canEdit, matchId }: ScriptSlotFormBaseProps) {
+export function ScriptSlotFormBasketball({
+  homeTeam,
+  awayTeam,
+  canEdit,
+  matchId,
+  prefillPicksPacked,
+}: ScriptSlotFormBaseProps) {
   const sportKey: ScriptSportKey = "basketball";
   const slots = getScriptSlots(sportKey);
-  const [winner, setWinner] = useState<Winner2>(null);
-  const [ptsOu, setPtsOu] = useState<OverUnder | null>(null);
-  const [both100, setBoth100] = useState<YesNo | null>(null);
-  const [c230, setC230] = useState<YesNo | null>(null);
-  const [margin10, setMargin10] = useState<YesNo | null>(null);
+  const prefill = useMemo(() => {
+    if (prefillPicksPacked === null || prefillPicksPacked === undefined) return null;
+    const p = prefillPicksPacked;
+    const winner = decodeBinaryWinner(Number(p & BigInt(3)));
+    if (!winner) return null;
+    return {
+      winner,
+      ptsOu: decodeOverUnder(p),
+      both100: decodeYesNo(p, 3),
+      c230: decodeYesNo(p, 4),
+      margin10: decodeYesNo(p, 5),
+    };
+  }, [prefillPicksPacked]);
+  const [winner, setWinner] = useState<Winner2>(prefill?.winner ?? null);
+  const [ptsOu, setPtsOu] = useState<OverUnder | null>(prefill?.ptsOu ?? null);
+  const [both100, setBoth100] = useState<YesNo | null>(prefill?.both100 ?? null);
+  const [c230, setC230] = useState<YesNo | null>(prefill?.c230 ?? null);
+  const [margin10, setMargin10] = useState<YesNo | null>(prefill?.margin10 ?? null);
   const [playStake, setPlayStake] = useState("");
-  const [activeStep, setActiveStep] = useState(1);
+  const [activeStep, setActiveStep] = useState(prefill ? 5 : 1);
 
   const filledState: FiveState = {
     wFilled: !!winner,
@@ -519,16 +559,35 @@ export function ScriptSlotFormBasketball({ homeTeam, awayTeam, canEdit, matchId 
   );
 }
 
-export function ScriptSlotFormBaseball({ homeTeam, awayTeam, canEdit, matchId }: ScriptSlotFormBaseProps) {
+export function ScriptSlotFormBaseball({
+  homeTeam,
+  awayTeam,
+  canEdit,
+  matchId,
+  prefillPicksPacked,
+}: ScriptSlotFormBaseProps) {
   const sportKey: ScriptSportKey = "baseball";
   const slots = getScriptSlots(sportKey);
-  const [winner, setWinner] = useState<Winner2>(null);
-  const [runsOu, setRunsOu] = useState<OverUnder | null>(null);
-  const [both3, setBoth3] = useState<YesNo | null>(null);
-  const [c10, setC10] = useState<YesNo | null>(null);
-  const [margin3, setMargin3] = useState<YesNo | null>(null);
+  const prefill = useMemo(() => {
+    if (prefillPicksPacked === null || prefillPicksPacked === undefined) return null;
+    const p = prefillPicksPacked;
+    const winner = decodeBinaryWinner(Number(p & BigInt(3)));
+    if (!winner) return null;
+    return {
+      winner,
+      runsOu: decodeOverUnder(p),
+      both3: decodeYesNo(p, 3),
+      c10: decodeYesNo(p, 4),
+      margin3: decodeYesNo(p, 5),
+    };
+  }, [prefillPicksPacked]);
+  const [winner, setWinner] = useState<Winner2>(prefill?.winner ?? null);
+  const [runsOu, setRunsOu] = useState<OverUnder | null>(prefill?.runsOu ?? null);
+  const [both3, setBoth3] = useState<YesNo | null>(prefill?.both3 ?? null);
+  const [c10, setC10] = useState<YesNo | null>(prefill?.c10 ?? null);
+  const [margin3, setMargin3] = useState<YesNo | null>(prefill?.margin3 ?? null);
   const [playStake, setPlayStake] = useState("");
-  const [activeStep, setActiveStep] = useState(1);
+  const [activeStep, setActiveStep] = useState(prefill ? 5 : 1);
 
   const filledState: FiveState = {
     wFilled: !!winner,
@@ -707,16 +766,35 @@ export function ScriptSlotFormBaseball({ homeTeam, awayTeam, canEdit, matchId }:
   );
 }
 
-export function ScriptSlotFormNfl({ homeTeam, awayTeam, canEdit, matchId }: ScriptSlotFormBaseProps) {
+export function ScriptSlotFormNfl({
+  homeTeam,
+  awayTeam,
+  canEdit,
+  matchId,
+  prefillPicksPacked,
+}: ScriptSlotFormBaseProps) {
   const sportKey: ScriptSportKey = "american_football";
   const slots = getScriptSlots(sportKey);
-  const [winner, setWinner] = useState<Winner3>(null);
-  const [ptsOu, setPtsOu] = useState<OverUnder | null>(null);
-  const [both20, setBoth20] = useState<YesNo | null>(null);
-  const [c50, setC50] = useState<YesNo | null>(null);
-  const [margin10, setMargin10] = useState<YesNo | null>(null);
+  const prefill = useMemo(() => {
+    if (prefillPicksPacked === null || prefillPicksPacked === undefined) return null;
+    const p = prefillPicksPacked;
+    const winner = decodeTernaryWinner(Number(p & BigInt(3)));
+    if (!winner) return null;
+    return {
+      winner,
+      ptsOu: decodeOverUnder(p),
+      both20: decodeYesNo(p, 3),
+      c50: decodeYesNo(p, 4),
+      margin10: decodeYesNo(p, 5),
+    };
+  }, [prefillPicksPacked]);
+  const [winner, setWinner] = useState<Winner3>(prefill?.winner ?? null);
+  const [ptsOu, setPtsOu] = useState<OverUnder | null>(prefill?.ptsOu ?? null);
+  const [both20, setBoth20] = useState<YesNo | null>(prefill?.both20 ?? null);
+  const [c50, setC50] = useState<YesNo | null>(prefill?.c50 ?? null);
+  const [margin10, setMargin10] = useState<YesNo | null>(prefill?.margin10 ?? null);
   const [playStake, setPlayStake] = useState("");
-  const [activeStep, setActiveStep] = useState(1);
+  const [activeStep, setActiveStep] = useState(prefill ? 5 : 1);
 
   const filledState: FiveState = {
     wFilled: !!winner,

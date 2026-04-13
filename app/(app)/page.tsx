@@ -1,7 +1,8 @@
 "use client";
 
-import { CalendarBlank, CaretRight, MagnifyingGlass } from "@phosphor-icons/react";
+import { CalendarBlank, CaretRight, MagnifyingGlass, Receipt } from "@phosphor-icons/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { FixtureTableRow } from "@/components/fixture-table-row";
@@ -176,6 +177,7 @@ function MatchCard({
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [sportKey, setSportKey] = useState<ScriptSportKey>("soccer");
   const [leagueId, setLeagueId] = useState(ALL_LEAGUES_ID);
   const [query, setQuery] = useState("");
@@ -183,6 +185,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [receiptInput, setReceiptInput] = useState("");
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [receiptResolving, setReceiptResolving] = useState(false);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
 
   const sportPickerOptions = useMemo(
     () => SPORT_OPTIONS.map((s) => ({ id: s.id, label: s.label })),
@@ -240,19 +246,102 @@ export default function HomePage() {
   }, [sportKey, leagueId]);
 
   const filtered = useMemo(() => filterMatches(fixtures, query), [fixtures, query]);
+  const onOpenFromReceipt = async () => {
+    const receipt = receiptInput.trim().toLowerCase();
+    if (!/^0x[0-9a-f]{64}$/.test(receipt)) {
+      setReceiptError("Paste a valid 0x… bytes32 receipt.");
+      return;
+    }
+    setReceiptResolving(true);
+    try {
+      const r = await fetch(`/api/playscript/resolve-receipt?receipt=${encodeURIComponent(receipt)}`, {
+        cache: "no-store",
+      });
+      const j = (await r.json()) as {
+        ok?: boolean;
+        error?: string;
+        eventId?: string;
+        sourceLeagueId?: string | null;
+        matchId?: string;
+        picksPacked?: string;
+      };
+      if (!r.ok || !j.ok || !j.eventId || !j.matchId || !j.picksPacked) {
+        throw new Error(j.error ?? `HTTP ${r.status}`);
+      }
+      const base = buildFixtureDetailHref(j.eventId, ALL_LEAGUES_ID, j.sourceLeagueId ?? null);
+      const extra = new URLSearchParams({
+        prefillPacked: j.picksPacked,
+        prefillMatchId: j.matchId,
+        fromReceipt: "1",
+      });
+      const joiner = base.includes("?") ? "&" : "?";
+      setReceiptError(null);
+      setReceiptModalOpen(false);
+      router.push(`${base}${joiner}${extra.toString()}`);
+    } catch (e: unknown) {
+      setReceiptError(e instanceof Error ? e.message : "Could not resolve receipt.");
+    } finally {
+      setReceiptResolving(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
           Upcoming fixtures
         </h2>
-        <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">
-          Next matches from TheSportsDB. Kickoffs are shown in{" "}
-          <span className="text-[var(--foreground)]">UTC</span> (API times treated
-          as GMT/UTC wall clock).
-        </p>
+        <button
+          type="button"
+          onClick={() => setReceiptModalOpen(true)}
+          className="inline-flex h-9 items-center gap-2 rounded-full border border-[var(--accent)] bg-[var(--surface-elevated)] px-4 text-sm font-semibold text-[var(--foreground)] transition-all duration-200 hover:-translate-y-px hover:border-[var(--dream-yellow)] hover:bg-[var(--surface-hover)] hover:text-[var(--dream-yellow)] hover:shadow-[0_0_20px_-6px_var(--dream-glow)] active:translate-y-0"
+        >
+          <Receipt className="h-4 w-4 text-[var(--accent)]" weight="regular" />
+          Receipt
+        </button>
       </div>
+
+      {receiptModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal>
+          <div className="w-full max-w-sm rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-4 shadow-xl">
+            <div className="mb-2 flex justify-end">
+              <button
+                type="button"
+                aria-label="Close receipt modal"
+                onClick={() => {
+                  if (!receiptResolving) setReceiptModalOpen(false);
+                }}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--border)] text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+              >
+                ×
+              </button>
+            </div>
+            <p className="text-sm font-semibold text-[var(--foreground)]">Paste a receipt to build script</p>
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                type="text"
+                value={receiptInput}
+                onChange={(e) => {
+                  setReceiptInput(e.target.value);
+                  if (receiptError) setReceiptError(null);
+                }}
+                placeholder="0x..."
+                className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition-[border-color,box-shadow] placeholder:text-[var(--muted)] focus:border-[var(--accent)]/55 focus:ring-1 focus:ring-[var(--accent-glow)]"
+                aria-label="Receipt"
+              />
+              <button
+                type="button"
+                onClick={() => void onOpenFromReceipt()}
+                disabled={receiptResolving}
+                className="shrink-0 rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[var(--background)] transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-65"
+              >
+                {receiptResolving ? "Checking..." : "Open"}
+              </button>
+            </div>
+            {receiptError ? <p className="mt-2 text-xs text-rose-300/90">{receiptError}</p> : null}
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="mx-auto w-full max-w-xl sm:mx-0 sm:min-w-0 sm:flex-1">

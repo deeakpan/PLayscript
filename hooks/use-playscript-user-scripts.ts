@@ -9,6 +9,8 @@ import { getPlayscriptClientEnv } from "@/lib/playscript-public-env";
 export type UserScriptListRow = {
   scriptId: string;
   matchId: string;
+  picksPacked: string;
+  choicesReceipt: string;
   sportIndex: number;
   stake: string;
   stakeFormatted: string;

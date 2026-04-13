@@ -111,6 +111,8 @@ export async function GET(req: Request) {
     const scripts: {
       scriptId: string;
       matchId: string;
+      picksPacked: string;
+      choicesReceipt: string;
       sportIndex: number;
       stake: string;
       stakeFormatted: string;
@@ -158,6 +160,8 @@ export async function GET(req: Request) {
       scripts.push({
         scriptId: scriptId.toString(),
         matchId: script.matchId.toString(),
+        picksPacked: script.picksPacked.toString(),
+        choicesReceipt: script.choicesReceipt,
         sportIndex: m.sport,
         stake: script.stake.toString(),
         stakeFormatted,

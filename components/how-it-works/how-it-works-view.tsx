@@ -107,6 +107,13 @@ export function HowItWorksView() {
               and picks.
             </p>
             <p>
+              Think of the receipt as your script fingerprint: copy/share it to reopen the same match and
+              prefill the same 5 slots in the app, so another user can build a script with the exact same
+              options as the original owner (they only re-enter stake before locking). The receipt itself is
+              a hash, so it proves picks but does not expose your raw slot choices without the matching packed
+              picks data.
+            </p>
+            <p>
               Slot wording and lines (totals, margins, etc.) depend on the match&apos;s sport — the same
               five indices exist for every sport, but the questions and cutoffs change (see Sports).
             </p>

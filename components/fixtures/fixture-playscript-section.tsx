@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useConnection } from "wagmi";
 
 import type { ScriptSportKey } from "@/lib/fixtures-shared";
@@ -29,6 +30,7 @@ export function FixturePlayscriptSection({
   kickoffOpen,
   sportKey,
 }: Props) {
+  const searchParams = useSearchParams();
   const env = getPlayscriptClientEnv();
   const q = usePlayscriptMatchByUrl(lookupeventUrl);
   const { address, status } = useConnection();
@@ -36,6 +38,18 @@ export function FixturePlayscriptSection({
 
   const matchId = q.data?.matchId ?? null;
   const numericMatchId = matchId !== null ? Number(matchId) : null;
+  const prefillPackedRaw = searchParams.get("prefillPacked");
+  const prefillMatchIdRaw = searchParams.get("prefillMatchId");
+  const prefillPicksPacked = (() => {
+    if (!prefillPackedRaw || !prefillMatchIdRaw || numericMatchId === null) return null;
+    if (prefillMatchIdRaw !== String(numericMatchId)) return null;
+    try {
+      const n = BigInt(prefillPackedRaw);
+      return n >= BigInt(0) ? n : null;
+    } catch {
+      return null;
+    }
+  })();
   const userScriptQ = usePlayscriptUserScript(numericMatchId);
 
   const checkingUserScript =
@@ -127,6 +141,7 @@ export function FixturePlayscriptSection({
             canEdit={canEdit}
             sportKey={sportKey}
             matchId={numericMatchId!}
+            prefillPicksPacked={prefillPicksPacked}
           />
         </>
       )}
