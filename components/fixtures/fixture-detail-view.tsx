@@ -201,7 +201,7 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
               </p>
             ) : null}
             <p className="text-xs leading-relaxed text-[var(--muted)]">
-              Script slot outcomes are hidden while the match is live. Settlement uses the on-chain
+              Script slot outcomes are hidden while the match is live. Settlement uses the onchain
               window after kickoff + finalize delay.
             </p>
           </div>
@@ -244,7 +244,7 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
               </dl>
               {outcomeGrading ? (
                 <p className="text-[10px] tabular-nums text-[var(--muted)]">
-                  On-chain final {outcomeGrading.finalHome}–{outcomeGrading.finalAway}
+                  Onchain final {outcomeGrading.finalHome}–{outcomeGrading.finalAway}
                 </p>
               ) : null}
             </div>

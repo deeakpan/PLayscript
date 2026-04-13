@@ -91,7 +91,7 @@ export function FixtureExistingScriptCard({ payload }: { payload: LockedPayload 
         {showSettlingNotice ? (
           <div className="rounded-lg border border-[var(--border)]/80 bg-[var(--surface)]/30 px-2.5 py-2">
             <p className="text-xs leading-snug text-[var(--muted)]">
-              Kickoff + finalize delay has passed; final scores are still settling on-chain. This card
+              Kickoff + finalize delay has passed; final scores are still settling onchain. This card
               refreshes automatically.
             </p>
           </div>

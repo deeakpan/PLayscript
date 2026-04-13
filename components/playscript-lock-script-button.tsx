@@ -164,7 +164,7 @@ export function PlayscriptLockScriptButton({
           className="mt-2 text-center text-xs font-medium text-emerald-400/95"
           role="status"
         >
-          Script locked on-chain. Your balance and match view will update in a moment.
+          Script locked onchain. Your balance and match view will update in a moment.
         </p>
       ) : null}
     </div>

@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   ...(metadataBase ? { metadataBase } : {}),
   title: "Playscript",
   description:
-    "Decentralized sports scenario markets settled with on-chain agents.",
+    "Decentralized sports scenario markets settled with onchain agents.",
   icons: {
     icon: [{ url: "/logo.png?v=3", type: "image/png", sizes: "32x32" }],
     apple: [{ url: "/logo.png?v=3", sizes: "180x180", type: "image/png" }],

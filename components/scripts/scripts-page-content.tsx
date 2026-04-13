@@ -56,7 +56,7 @@ export function ScriptsPageContent() {
       <section className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-4 sm:p-6">
         <h1 className="text-xl font-semibold tracking-tight text-[var(--foreground)] sm:text-2xl">My Scripts</h1>
         <p className="text-sm text-[var(--muted)]">
-          Connect a wallet to list scripts you have locked on-chain.
+          Connect a wallet to list scripts you have locked onchain.
         </p>
         <ConnectWallet />
       </section>

@@ -68,7 +68,7 @@ export function HowItWorksView() {
             <p>
               <strong>Playscript</strong> is a <strong>PROTOCOL</strong> for sports scenarios: you choose
               five outcomes before kickoff, stake <strong>$PLAY</strong>, and the same rules settle everyone
-              on-chain. The app is a front-end to that protocol — match lists come from{" "}
+              onchain. The app is a front-end to that protocol — match lists come from{" "}
               <strong>TheSportsDB</strong>; final scores used for grading are whatever the PROTOCOL records
               after <strong>settlement</strong> (see below).
             </p>
@@ -82,7 +82,7 @@ export function HowItWorksView() {
             <p>
               Stakes are in the <strong>PLAY</strong> token ($PLAY in the UI). Before your first lock, the
               PROTOCOL needs a standard ERC-20 allowance to the core contract so it can pull your stake.
-              Amounts respect PLAY decimals on-chain.
+              Amounts respect PLAY decimals onchain.
             </p>
             <p>
               Your stake is locked until you <strong>claim</strong> after the match is settled: claiming
@@ -102,7 +102,7 @@ export function HowItWorksView() {
               <strong>one locked script per wallet per match</strong>.
             </p>
             <p>
-              Picks are packed into a single on-chain value; you get a deterministic{" "}
+              Picks are packed into a single onchain value; you get a deterministic{" "}
               <strong>choices receipt</strong> (hash) anyone can verify against <code>matchId</code>, sport,
               and picks.
             </p>
@@ -131,7 +131,7 @@ export function HowItWorksView() {
             </p>
             <p>
               Fixtures in the app are tagged with a sport so you only build scripts that match how that
-              league is wired on-chain.
+              league is wired onchain.
             </p>
           </Prose>
         </MajorSection>
@@ -146,7 +146,7 @@ export function HowItWorksView() {
               PROTOCOL issues parallel <strong>JSON API agent</strong> requests against the match&apos;s{" "}
               <strong>TheSportsDB event URL</strong>, using stored selector paths (e.g. where home/away
               scores live in that JSON). When every required field returns successfully, the PROTOCOL writes{" "}
-              <strong>final home and away numbers</strong> on-chain and marks the match settled.
+              <strong>final home and away numbers</strong> onchain and marks the match settled.
             </p>
             <p>
               Triggering settlement requires attaching the native <strong>gas/deposit</strong> the agent
@@ -155,7 +155,7 @@ export function HowItWorksView() {
             </p>
             <p>
               <strong>You</strong> don&apos;t run the agent by hand; you only need to know that{" "}
-              <strong>grading uses those on-chain finals</strong>, not a third-party score widget in the
+              <strong>grading uses those onchain finals</strong>, not a third-party score widget in the
               app.
             </p>
           </Prose>

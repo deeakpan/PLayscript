@@ -581,7 +581,7 @@ export function ScriptSlotFormSoccer({
           ) : null}
           {canEdit && scriptComplete && stakeNum <= 0 ? (
             <p className="mt-2 text-center text-[11px] text-[var(--muted)]">
-              Enter a $PLAY stake, then lock on-chain.
+              Enter a $PLAY stake, then lock onchain.
             </p>
           ) : null}
         </div>

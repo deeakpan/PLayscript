@@ -386,9 +386,14 @@ export default function HomePage() {
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-[var(--muted)]">
-          Loading fixtures…
-        </p>
+        <div className="flex justify-center py-8">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)]/80 bg-[var(--surface)]/50 px-3 py-1.5 text-xs text-[var(--muted)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]/80 animate-pulse [animation-delay:160ms]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]/60 animate-pulse [animation-delay:320ms]" />
+            <span className="ml-1">Loading fixtures</span>
+          </div>
+        </div>
       ) : error ? (
         <p className="py-8 text-center text-sm text-rose-300/90">{error}</p>
       ) : filtered.length === 0 ? (

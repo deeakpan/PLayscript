@@ -63,7 +63,7 @@ export function FixturePlayscriptSection({
     return (
       <section className="border-t border-[var(--border)] pt-8">
         <p className="max-w-xl text-sm text-[var(--muted)]">
-          On-chain script builder needs{" "}
+          Onchain script builder needs{" "}
           <code className="rounded bg-[var(--surface)] px-1 text-xs text-[var(--foreground)]">
             NEXT_PUBLIC_PLAY_TOKEN_ADDRESS
           </code>{" "}
@@ -80,7 +80,7 @@ export function FixturePlayscriptSection({
   if (q.isPending || q.isFetching) {
     return (
       <section className="border-t border-[var(--border)] pt-8">
-        <FixturePlayscriptInlineSpinner label="Checking on-chain match for this fixture…" />
+        <FixturePlayscriptInlineSpinner label="Checking onchain match for this fixture…" />
       </section>
     );
   }
@@ -89,7 +89,7 @@ export function FixturePlayscriptSection({
     return (
       <section className="border-t border-[var(--border)] pt-8">
         <p className="text-sm text-rose-300/90">
-          Could not resolve on-chain match via server RPC. Set{" "}
+          Could not resolve onchain match via server RPC. Set{" "}
           <code className="rounded bg-[var(--surface)] px-1 text-xs">SOMNIA_TESTNET_RPC_URL</code> in
           <code className="ml-1 rounded bg-[var(--surface)] px-1 text-xs">.env</code> if the default RPC
           fails.
@@ -103,7 +103,7 @@ export function FixturePlayscriptSection({
     return (
       <section className="border-t border-[var(--border)] pt-8">
         <p className="max-w-xl text-sm text-[var(--muted)]">
-          No on-chain match uses this exact TheSportsDB URL yet. After the owner registers this
+          No onchain match uses this exact TheSportsDB URL yet. After the owner registers this
           event on PlayscriptCore (same <code className="text-xs">lookupevent.php?id=…</code> URL),
           script slots appear here.
         </p>
@@ -114,12 +114,12 @@ export function FixturePlayscriptSection({
   return (
     <section className="border-t border-[var(--border)] pt-8">
       <p className="mb-4 text-xs font-medium text-[var(--muted)]">
-        On-chain match{" "}
+        Onchain match{" "}
         <span className="font-mono text-[var(--foreground)]">#{matchId.toString()}</span>
       </p>
 
       {checkingUserScript ? (
-        <FixturePlayscriptInlineSpinner label="Loading your on-chain script for this match…" />
+        <FixturePlayscriptInlineSpinner label="Loading your onchain script for this match…" />
       ) : userScriptQ.data?.hasScript === true ? (
         <FixtureExistingScriptCard payload={userScriptQ.data} />
       ) : !kickoffOpen ? (
