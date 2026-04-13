@@ -278,7 +278,7 @@ export default function HomePage() {
           </label>
         </div>
 
-        <div className="flex w-full flex-col gap-4 sm:ml-auto sm:mr-3 sm:w-auto sm:shrink-0 sm:flex-row sm:items-end sm:justify-end">
+        <div className="grid w-full grid-cols-2 gap-3 sm:ml-auto sm:mr-3 sm:w-auto sm:shrink-0 sm:items-end sm:justify-end">
           <LeagueSelect
             showLabel
             label="Sport"

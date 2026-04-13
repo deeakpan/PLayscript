@@ -22,10 +22,23 @@ const fontSyne = Syne({
   weight: ["600", "700", "800"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+const metadataBase: URL | undefined =
+  siteUrl && siteUrl.length > 0
+    ? new URL(siteUrl)
+    : process.env.VERCEL_URL
+      ? new URL(`https://${process.env.VERCEL_URL}`)
+      : undefined;
+
 export const metadata: Metadata = {
+  ...(metadataBase ? { metadataBase } : {}),
   title: "Playscript",
   description:
     "Decentralized sports scenario markets settled with on-chain agents.",
+  icons: {
+    icon: [{ url: "/logo.png?v=3", type: "image/png", sizes: "32x32" }],
+    apple: [{ url: "/logo.png?v=3", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({
