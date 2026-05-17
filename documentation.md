@@ -24,15 +24,9 @@ Living doc for **Somnia Agents** issues and fixes. Add sections as you discover 
 
 ---
 
-## Reference — working price oracle invoke (example)
+## Reference — price oracle demos
 
-After deploy with correct `PLATFORM` and oracle address in `.env`:
-
-```text
-npm run invoke:price-oracle -- --network somnia
-```
-
-Example success: `PriceReceived` with BTC/USD from CoinGecko (8-decimal fixed-point in `latestPrice`).
+Root `scripts/` only ships **Playscript v2** deploy scripts. For Somnia agent deploy/invoke flows, use **`somnia-agents-examples/`** (e.g. `01-price-oracle/scripts/`).
 
 ---
 
@@ -43,4 +37,3 @@ Example success: `PriceReceived` with BTC/USD from CoinGecko (8-decimal fixed-po
 | `contracts/PriceOracle.sol` | Somnia JSON API agent — BTC/ETH/`requestPrice` |
 | `contracts/JsonApiProbe.sol` | Demos + TheSportsDB multi-field probe |
 | `contracts/interfaces/ISomniaAgents.sol` | `IAgentRequester` + types + `IJsonApiAgent` |
-| `scripts/invoke-price-oracle.ts` | Calls `requestBtcPrice`, polls `PriceReceived` |

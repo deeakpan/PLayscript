@@ -11,7 +11,7 @@ export function getThesportsdbJsonBaseForClient(): string {
   return `https://www.thesportsdb.com/api/v1/json/${getThesportsdbApiKeyForClient()}`;
 }
 
-/** Same shape as `register-playscript-thesportsdb-events.ts` on-chain JSON URL. */
+/** Same shape as v1 on-chain TheSportsDB `lookupevent.php` URLs (v2 kernel uses the same URL string). */
 export function buildLookupeventApiUrl(eventId: string): string {
   const id = eventId.trim();
   return `${getThesportsdbJsonBaseForClient()}/lookupevent.php?id=${encodeURIComponent(id)}`;

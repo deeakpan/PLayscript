@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { encodeFunctionData, maxUint256, parseUnits } from "viem";
 import { useConnection, usePublicClient, useWalletClient } from "wagmi";
 
-import { usePlayBalance } from "@/hooks/use-play-balance";
+import { invalidatePlayBalance, usePlayBalance } from "@/hooks/use-play-balance";
 import { somniaTestnet } from "@/lib/chains/somnia";
 import {
   playTokenReadAbi,
@@ -121,7 +121,7 @@ export function PlayscriptLockScriptButton({
       });
       await publicClient.waitForTransactionReceipt({ hash: hashL });
 
-      await queryClient.invalidateQueries({ queryKey: ["play-balance-api"] });
+      await invalidatePlayBalance(queryClient);
       await queryClient.invalidateQueries({ queryKey: ["playscript-user-script"] });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

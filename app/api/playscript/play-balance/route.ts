@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAddress, isAddress } from "viem";
 
-import { getPlayscriptClientEnv } from "@/lib/playscript-public-env";
+import { getPlayTokenEnv } from "@/lib/playscript-public-env";
 import { readPlayBalance } from "@/lib/playscript-read-onchain";
 
 export const dynamic = "force-dynamic";
@@ -14,12 +14,9 @@ export async function GET(req: Request) {
   }
   const owner = getAddress(raw) as `0x${string}`;
 
-  const env = getPlayscriptClientEnv();
+  const env = getPlayTokenEnv();
   if (!env.ok) {
-    return NextResponse.json(
-      { ok: false, error: "NEXT_PUBLIC_PLAY_TOKEN_ADDRESS not set." },
-      { status: 503 },
-    );
+    return NextResponse.json({ ok: false, error: env.reason }, { status: 503 });
   }
 
   try {

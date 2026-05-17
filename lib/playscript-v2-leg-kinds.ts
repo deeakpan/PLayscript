@@ -1,0 +1,101 @@
+/**
+ * Stable leg kind ids — must match `PlayscriptV2Grading.sol` (`legHitByKind`).
+ * Slot index 0–11 in a market maps to `legKinds[slot]`; bitmask bit `i` grades `legKinds[i]`.
+ */
+
+export const V2_SOCCER_LEG_KINDS = {
+  HOME_WIN: 1,
+  AWAY_WIN: 2,
+  DRAW: 3,
+  OVER_25: 4,
+  UNDER_15: 5,
+  BTTS: 6,
+  HOME_CS: 7,
+  AWAY_CS: 8,
+  HOME_WIN_2PLUS: 9,
+  AWAY_WIN_2PLUS: 10,
+  FH_ANY_GOAL: 11,
+  BOTH_UNDER_3: 12,
+  HOME_LEAD_HT: 13,
+  AWAY_LEAD_HT: 14,
+  DRAW_HT: 15,
+  MATCH_YELLOW_2PLUS: 16,
+  HOME_HT_OVER_05: 20,
+  AWAY_HT_OVER_05: 21,
+  HOME_RED_CARD: 23,
+  AWAY_RED_CARD: 24,
+  HT_OVER_15: 25,
+  HT_UNDER_05: 26,
+  HOME_HT_CS: 27,
+  AWAY_HT_CS: 28,
+  HOME_SCORES_2PLUS: 29,
+  AWAY_SCORES_2PLUS: 30,
+  /** Team got ≥1 yellow (ESPN `boxscore.teams` home/away). */
+  HOME_YELLOW_1PLUS: 31,
+  AWAY_YELLOW_1PLUS: 32,
+  HOME_YELLOW_2PLUS: 33,
+  AWAY_YELLOW_2PLUS: 34,
+  /** Each team ≥1 yellow. */
+  BOTH_TEAMS_YELLOW: 35,
+} as const;
+
+/** Always included in the 12 soccer legs for a fixture (before random fill). */
+export const V2_SOCCER_CORE_LEG_KINDS: readonly number[] = [
+  V2_SOCCER_LEG_KINDS.HOME_WIN,
+  V2_SOCCER_LEG_KINDS.AWAY_WIN,
+  V2_SOCCER_LEG_KINDS.DRAW,
+  V2_SOCCER_LEG_KINDS.HOME_LEAD_HT,
+  V2_SOCCER_LEG_KINDS.AWAY_LEAD_HT,
+  V2_SOCCER_LEG_KINDS.DRAW_HT,
+  V2_SOCCER_LEG_KINDS.OVER_25,
+  V2_SOCCER_LEG_KINDS.BTTS,
+];
+
+export const V2_BASKETBALL_LEG_KINDS = {
+  HOME_WIN: 41,
+  AWAY_WIN: 42,
+  OVER_225: 43,
+  UNDER_200: 44,
+  BOTH_100_PLUS: 45,
+  BOTH_UNDER_120: 46,
+  HOME_WIN_10PLUS: 47,
+  AWAY_WIN_10PLUS: 48,
+  FIRST_HALF_OVER_115: 49,
+  TOTAL_230_PLUS: 50,
+  MARGIN_20_PLUS: 51,
+  BOTH_UNDER_110: 52,
+  Q1_COMBINED_OVER_55: 53,
+  HOME_Q1_OVER_28: 54,
+  AWAY_Q1_OVER_28: 55,
+} as const;
+
+export const V2_NFL_LEG_KINDS = {
+  HOME_WIN: 61,
+  AWAY_WIN: 62,
+  OVER_45: 63,
+  UNDER_38: 64,
+  BOTH_17_PLUS: 65,
+  HOME_ALLOWS_10: 66,
+  AWAY_ALLOWS_10: 67,
+  MARGIN_10_PLUS: 68,
+  FIRST_HALF_OVER_23: 69,
+  BOTH_24_PLUS: 70,
+  TOTAL_55_PLUS: 71,
+  EITHER_SHUTOUT: 72,
+  Q1_COMBINED_OVER_14: 73,
+} as const;
+
+export const V2_MLB_LEG_KINDS = {
+  HOME_WIN: 81,
+  AWAY_WIN: 82,
+  OVER_9_5: 83,
+  UNDER_7_5: 84,
+  BOTH_4_PLUS: 85,
+  HOME_5_PLUS: 86,
+  AWAY_5_PLUS: 87,
+  TOTAL_10_PLUS: 88,
+  MARGIN_3_PLUS: 89,
+  BOTH_SCORE: 90,
+  EITHER_SHUTOUT: 91,
+  BOTH_UNDER_7: 92,
+} as const;

@@ -7,6 +7,7 @@ import { useConnection, usePublicClient, useWalletClient } from "wagmi";
 
 import { somniaTestnet } from "@/lib/chains/somnia";
 import { playscriptCoreWriteAbi } from "@/lib/playscript-onchain-abi";
+import { invalidatePlayBalance } from "@/hooks/use-play-balance";
 import { getPlayscriptClientEnv } from "@/lib/playscript-public-env";
 
 type Props = {
@@ -63,7 +64,7 @@ export function PlayscriptClaimPayoutButton({ scriptId, disabled, compact, onSuc
       });
       await publicClient.waitForTransactionReceipt({ hash });
 
-      await queryClient.invalidateQueries({ queryKey: ["play-balance-api"] });
+      await invalidatePlayBalance(queryClient);
       await queryClient.invalidateQueries({ queryKey: ["playscript-user-script"] });
       await queryClient.invalidateQueries({ queryKey: ["playscript-user-scripts"] });
       onSuccess?.();

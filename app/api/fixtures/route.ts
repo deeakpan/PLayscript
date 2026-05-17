@@ -7,12 +7,51 @@ import {
   leagueIdMatchesSport,
   type ScriptSportKey,
   UPCOMING_LEAGUE_ID_SET,
+  UPCOMING_LEAGUES,
 } from "@/lib/fixtures-shared";
+import { formatEspnNetworkError } from "@/lib/espn-fetch";
 import {
-  fetchUpcomingFixtures,
-  fetchUpcomingFixturesMerged,
-  THESPORTSDB_LIST_REVALIDATE_SEC,
-} from "@/lib/thesportsdb-fixtures";
+  espnDevMockEnabled,
+  getEspnDevMockFixtures,
+} from "@/lib/espn-fixtures-dev-mock";
+import {
+  ESPN_FIXTURE_WINDOW_DAYS,
+  ESPN_LIST_REVALIDATE_SEC,
+  fetchEspnFixturesForLeague,
+} from "@/lib/espn-fixtures";
+
+async function fetchEspnFixturesMerged(leagueSlugs: readonly string[]) {
+  if (espnDevMockEnabled()) {
+    const merged = getEspnDevMockFixtures();
+    return merged.filter((r) => r.sourceLeagueId && leagueSlugs.includes(r.sourceLeagueId));
+  }
+
+  const settled = await Promise.allSettled(
+    leagueSlugs.map((slug) => {
+      const label = UPCOMING_LEAGUES.find((l) => l.id === slug)?.label ?? slug;
+      return fetchEspnFixturesForLeague(slug, label);
+    }),
+  );
+
+  const merged: Awaited<ReturnType<typeof fetchEspnFixturesForLeague>> = [];
+  const errors: string[] = [];
+  for (let i = 0; i < settled.length; i++) {
+    const r = settled[i]!;
+    if (r.status === "fulfilled") {
+      merged.push(...r.value);
+      continue;
+    }
+    const slug = leagueSlugs[i]!;
+    errors.push(`${slug}: ${formatEspnNetworkError(r.reason)}`);
+  }
+
+  if (merged.length === 0 && errors.length > 0) {
+    throw new Error(errors.join("; "));
+  }
+
+  merged.sort((a, b) => a.kickoffUtc.localeCompare(b.kickoffUtc));
+  return merged;
+}
 
 export async function GET(req: NextRequest) {
   const sportRaw = req.nextUrl.searchParams.get("sport") ?? "soccer";
@@ -36,18 +75,25 @@ export async function GET(req: NextRequest) {
   try {
     const fixtures =
       leagueId === ALL_LEAGUES_ID
-        ? await fetchUpcomingFixturesMerged(getLeagueIdsForSport(sport))
-        : await fetchUpcomingFixtures(leagueId);
+        ? await fetchEspnFixturesMerged(getLeagueIdsForSport(sport))
+        : await fetchEspnFixturesForLeague(
+            leagueId,
+            UPCOMING_LEAGUES.find((l) => l.id === leagueId)?.label ?? leagueId,
+          );
     return NextResponse.json(
-      { fixtures },
+      {
+        fixtures,
+        source: espnDevMockEnabled() ? "espn-dev-mock" : "espn",
+        windowDays: ESPN_FIXTURE_WINDOW_DAYS,
+      },
       {
         headers: {
-          "Cache-Control": `public, s-maxage=${THESPORTSDB_LIST_REVALIDATE_SEC}`,
+          "Cache-Control": `public, s-maxage=${ESPN_LIST_REVALIDATE_SEC}`,
         },
       },
     );
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
+    const message = formatEspnNetworkError(e);
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

@@ -1,10 +1,11 @@
 "use client";
 
 import { formatUnits } from "viem";
+import { useEffect, useState } from "react";
 
 import { usePlayBalance } from "@/hooks/use-play-balance";
 
-export function PlayBalance() {
+function PlayBalanceInner() {
   const { connected, address, envOk, data, isPending, isFetching, isError, error } = usePlayBalance();
   const loading = isPending || isFetching;
 
@@ -13,7 +14,7 @@ export function PlayBalance() {
   if (!envOk) {
     return (
       <span className="max-w-[10rem] truncate text-[10px] text-[var(--muted)] sm:max-w-none sm:text-xs">
-        Set PLAY env
+        No PLAY in deployment
       </span>
     );
   }
@@ -54,4 +55,11 @@ export function PlayBalance() {
       <span className="font-semibold text-[var(--accent)]">$PLAY</span>
     </span>
   );
+}
+
+export function PlayBalance() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return <PlayBalanceInner />;
 }

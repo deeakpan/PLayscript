@@ -13,6 +13,10 @@ contract PriceOracle {
 
     uint256 public constant JSON_API_AGENT_ID = 13174292974160097713;
 
+    /// @notice Minimum native forwarded with each `createRequest` (0.12 STT). Somnia Agent Monitor bills JSON API
+    ///         ~0.12 for 3 runners while `getRequestDeposit()` can read lower on-chain — use the higher value.
+    uint256 public constant MIN_AGENT_NATIVE_WEI = 120_000_000_000_000_000;
+
     uint256 public latestPrice;
     uint256 public lastUpdatedAt;
     mapping(uint256 => bool) public pendingRequests;
@@ -35,6 +39,14 @@ contract PriceOracle {
         );
     }
 
+    /// @notice Same DIA HTTP source as `BrimdexFeeds` BTC (`assetId` 0): JSON field `Price`, scaled to 8 decimals by the agent.
+    function requestDiaBtcUsd() external payable returns (uint256 requestId) {
+        return _requestPrice(
+            "https://api.diadata.org/v1/assetQuotation/Bitcoin/0x0000000000000000000000000000000000000000",
+            "Price"
+        );
+    }
+
     function requestPrice(string calldata coinId) external payable returns (uint256 requestId) {
         string memory url = string.concat(
             "https://api.coingecko.com/api/v3/simple/price?ids=",
@@ -54,10 +66,11 @@ contract PriceOracle {
             uint8(8)
         );
 
-        uint256 deposit = PLATFORM.getRequestDeposit();
-        require(msg.value >= deposit, "Insufficient deposit");
+        uint256 platformDeposit = PLATFORM.getRequestDeposit();
+        uint256 valueToSend = platformDeposit > MIN_AGENT_NATIVE_WEI ? platformDeposit : MIN_AGENT_NATIVE_WEI;
+        require(msg.value >= valueToSend, "Insufficient deposit");
 
-        requestId = PLATFORM.createRequest{value: deposit}(
+        requestId = PLATFORM.createRequest{value: valueToSend}(
             JSON_API_AGENT_ID,
             address(this),
             this.handleResponse.selector,
@@ -67,8 +80,8 @@ contract PriceOracle {
         pendingRequests[requestId] = true;
         emit PriceRequested(requestId, url, selector);
 
-        if (msg.value > deposit) {
-            payable(msg.sender).transfer(msg.value - deposit);
+        if (msg.value > valueToSend) {
+            payable(msg.sender).transfer(msg.value - valueToSend);
         }
     }
 
@@ -98,7 +111,8 @@ contract PriceOracle {
     }
 
     function getRequiredDeposit() external view returns (uint256) {
-        return PLATFORM.getRequestDeposit();
+        uint256 d = PLATFORM.getRequestDeposit();
+        return d > MIN_AGENT_NATIVE_WEI ? d : MIN_AGENT_NATIVE_WEI;
     }
 
     receive() external payable {}

@@ -74,3 +74,34 @@ interface IJsonApiAgent {
     function fetchUint(string calldata url, string calldata selector, uint8 decimals) external returns (uint256);
     function fetchInt(string calldata url, string calldata selector, uint8 decimals) external returns (int256);
 }
+
+/// @notice LLM Inference agent payloads (`createRequest` with `LLM_AGENT_ID`).
+interface ILLMAgent {
+    function inferString(
+        string calldata prompt,
+        string calldata system,
+        bool chainOfThought,
+        string[] calldata allowedValues
+    ) external returns (string memory);
+
+    function inferNumber(
+        string calldata prompt,
+        string calldata system,
+        int256 minValue,
+        int256 maxValue,
+        bool chainOfThought
+    ) external returns (int256);
+}
+
+/// @notice LLM Parse Website agent payloads (`createRequest` with `PARSE_WEBSITE_AGENT_ID`).
+interface IParseWebsiteAgent {
+    function ExtractString(
+        string calldata key,
+        string calldata description,
+        string[] calldata options,
+        string calldata prompt,
+        string calldata url,
+        bool resolveUrl,
+        uint8 numPages
+    ) external returns (string memory);
+}

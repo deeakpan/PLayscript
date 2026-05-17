@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowUpRight, Gear, House, List, ListBullets, SoccerBall, X } from "@phosphor-icons/react";
+import { ArrowUpRight, Gear, House, List, ListBullets, Wallet, X } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { HowItWorksTocPanel } from "@/components/how-it-works/how-it-works-toc-panel";
 import { useHowItWorksScroll } from "@/components/how-it-works/how-it-works-scroll-context";
 import { ConnectWallet } from "@/components/web3/connect-wallet";
@@ -12,14 +13,22 @@ import { PlayBalance } from "@/components/web3/play-balance";
 
 const nav = [
   { href: "/", label: "Matches", icon: House },
+  { href: "/vaults", label: "Vaults", icon: Wallet },
   { href: "/scripts", label: "My scripts", icon: ListBullets },
   { href: "/how-it-works", label: "How it works", icon: ArrowUpRight },
   { href: "/settings", label: "Settings", icon: Gear },
 ] as const;
 
+function navItemActive(pathname: string, href: string): boolean {
+  if (pathname === href) return true;
+  if (href === "/vaults" && pathname.startsWith("/vaults")) return true;
+  return false;
+}
+
 function headerTitle(pathname: string): string {
   if (pathname === "/" || pathname === "") return "Match center";
   if (pathname === "/scripts") return "My scripts";
+  if (pathname === "/vaults" || pathname.startsWith("/vaults/")) return "Vaults";
   if (pathname === "/settings") return "Settings";
   if (pathname === "/how-it-works") return "How it works";
   if (pathname === "/docs" || pathname.startsWith("/docs/")) return "Docs";
@@ -31,11 +40,19 @@ function headerTitle(pathname: string): string {
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
   const { activeId: hiwActiveId } = useHowItWorksScroll();
   const mobileHowItWorksToc = pathname === "/how-it-works";
 
   useEffect(() => {
     setMobileNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const onScroll = () => setHeaderScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, [pathname]);
 
   useEffect(() => {
@@ -53,7 +70,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <button
         type="button"
         aria-label="Close navigation"
-        className={`fixed inset-0 z-[55] bg-[var(--shell-header-fill)] backdrop-blur-md transition-opacity duration-200 md:hidden ${
+        className={`fixed inset-0 z-[55] bg-black/50 backdrop-blur-sm transition-opacity duration-200 md:hidden ${
           mobileNavOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={() => setMobileNavOpen(false)}
@@ -68,16 +85,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link
             href="/"
             onClick={() => setMobileNavOpen(false)}
-            className="flex min-w-0 items-center gap-2 rounded-md py-1 transition-colors hover:text-[var(--dream-yellow)]"
+            className="flex min-h-0 min-w-0 flex-1 items-center rounded-md transition-opacity hover:opacity-90 md:flex-none"
             aria-label="Playscript home"
           >
-            <SoccerBall
-              className="h-7 w-7 shrink-0 text-[var(--accent)] md:h-7"
-              weight="regular"
+            <BrandLogo
+              className="h-12 w-auto max-w-[12.5rem] object-contain object-left md:max-w-[13rem]"
+              priority
             />
-            <span className="truncate text-sm font-semibold tracking-tight text-[var(--accent)]">
-              Playscript
-            </span>
           </Link>
           <button
             type="button"
@@ -99,7 +113,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <nav className="hidden min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-2 md:flex">
               {nav.map(({ href, label, icon: Icon }) => {
-                const active = pathname === href;
+                const active = navItemActive(pathname, href);
                 return (
                   <Link
                     key={href}
@@ -121,7 +135,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         ) : (
           <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-2">
             {nav.map(({ href, label, icon: Icon }) => {
-              const active = pathname === href;
+              const active = navItemActive(pathname, href);
               return (
                 <Link
                   key={href}
@@ -153,7 +167,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-h-screen w-full min-w-0 flex-1 flex-col md:pl-52">
-        <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] bg-[var(--shell-header-fill)] px-3 backdrop-blur-md sm:gap-3 sm:px-5">
+        <header
+          className={`sticky top-0 z-50 flex h-14 shrink-0 items-center justify-between gap-2 border-b px-3 transition-[background-color,backdrop-filter,border-color] duration-200 sm:gap-3 sm:px-5 ${
+            headerScrolled
+              ? "border-[var(--border)] bg-[var(--shell-header-scrolled-fill)] backdrop-blur-md"
+              : "border-[var(--shell-header-border)] bg-transparent"
+          }`}
+        >
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <button
               type="button"
@@ -165,16 +185,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             <Link
               href="/"
-              className="flex min-w-0 items-center gap-2 rounded-md py-1 md:hidden"
+              className="flex min-h-0 min-w-0 flex-1 items-center md:hidden"
               aria-label="Playscript home"
             >
-              <SoccerBall
-                className="h-6 w-6 shrink-0 text-[var(--accent)]"
-                weight="regular"
-              />
-              <span className="truncate text-sm font-semibold tracking-tight text-[var(--accent)]">
-                Playscript
-              </span>
+              <BrandLogo className="h-11 w-auto max-w-[11rem] object-contain object-left" />
             </Link>
             <h1 className="hidden min-w-0 truncate text-sm font-semibold tracking-tight text-[var(--foreground)] md:block">
               {headerTitle(pathname)}

@@ -25,28 +25,45 @@ Optional: refresh ABIs from Hardhat artifacts:
 npm run sync-abis   # from repo root: npx hardhat compile first
 ```
 
-## Somnia hosted subgraph (recommended)
+## Ormi hosted subgraph (`subgraph.somnia.network`)
 
-If you have a deploy key from [Somnia’s subgraph dashboard](https://docs.somnia.network) (or their team), deploy from `subgraph/`:
+Deploy key from [Ormi dashboard](https://subgraph.somnia.network/) → `SUBGRAPH_API_KEY` in repo root `.env`.
 
-**Version `v0.0.1`** — subgraph slug `playscript-v2-somnia-v0-0-1`.
-
-From repo root, put `SUBGRAPH_API_KEY=…` in `.env`, then:
+Default: slug `playscript-v2-somnia-v0-0-1`, version **`v0.0.2`** (override with `SUBGRAPH_VERSION`).
 
 ```bash
 cd subgraph
 npm run deploy:somnia
 ```
 
-This runs `npm run build` then deploys with `--version-label v0.0.1` (reads the key from `.env`; do not commit it).
-
-After deploy, the dashboard gives you a **query URL** (GraphQL). Put that in the app:
+Copy the **Queries** URL from CLI output into:
 
 ```env
-NEXT_PUBLIC_PLAYSCRIPT_V2_SUBGRAPH_URL=https://…  # query endpoint, not the /deploy URL
+NEXT_PUBLIC_PLAYSCRIPT_V2_SUBGRAPH_URL=https://api.subgraph.somnia.network/api/public/.../gn
 ```
 
-Use subgraph slug **`playscript-v2-somnia`** only if that name is free on your account; otherwise replace it with the slug you registered (e.g. `your-team/playscript-v2`).
+If `latest_block` stays empty on the dashboard, try Protofire below or open an Ormi support ticket.
+
+## Protofire / Chain.Love (`somnia.chain.love`)
+
+Separate host — often worth trying when Ormi never leaves block 0.
+
+1. [somnia.chain.love](https://somnia.chain.love/) → create subgraph named **`playscript-v2-somnia`** (network `somnia-testnet`).
+2. Copy deploy **access token** → `CHAIN_LOVE_ACCESS_TOKEN` in repo root `.env`.
+3. Deploy:
+
+```bash
+cd subgraph
+npm run deploy:protofire
+```
+
+Query URL (after sync):
+
+```env
+NEXT_PUBLIC_PLAYSCRIPT_V2_SUBGRAPH_URL=https://proxy.somnia.chain.love/subgraphs/name/somnia-testnet/playscript-v2-somnia
+```
+
+Override name with `PROTOFIRE_SUBGRAPH_NAME=somnia-testnet/your-name` if needed.
 
 Manifest network must stay **`somnia-testnet`** — that must match what Somnia’s indexer expects.
 

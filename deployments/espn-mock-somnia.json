@@ -1,0 +1,29 @@
+{
+  "network": "somnia",
+  "chainId": 50312,
+  "EspnJsonApiFetchMocks": "0x280b05cd8f0a4c73bfe569ac245f34e9ce6e16e1",
+  "deployedAt": "2026-05-16T09:49:37.971Z",
+  "deployTx": "0x4391efa8865272eac5ff2eec1861d57c66d5a34e56630314866394db770cccaa",
+  "agentDepositWei": "120000000000000000",
+  "probeCallCounts": {
+    "soccerEpl": 8,
+    "nba": 6,
+    "nfl": 6,
+    "mlb": 2
+  },
+  "fixtures": {
+    "soccerEpl": {
+      "eventId": "740902",
+      "urls": "see contract constants"
+    },
+    "nba": {
+      "eventId": "400878160"
+    },
+    "nfl": {
+      "eventId": "401671764"
+    },
+    "mlb": {
+      "eventId": "401695561"
+    }
+  }
+}

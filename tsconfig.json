@@ -39,6 +39,7 @@
     "artifacts",
     "cache",
     "typechain-types",
-    "somnia-agents-examples"
+    "somnia-agents-examples",
+    "subgraph"
   ]
 }

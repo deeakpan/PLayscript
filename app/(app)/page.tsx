@@ -17,7 +17,13 @@ import {
   type ScriptSportKey,
   SPORT_OPTIONS,
 } from "@/lib/fixtures-shared";
-import { deriveDisplayMatchStatus, matchInferenceWindowMs } from "@/lib/fixture-display-status";
+import {
+  deriveDisplayMatchStatus,
+  FIXTURE_LIST_FILTER_OPTIONS,
+  fixtureMatchesListFilter,
+  type FixtureListFilter,
+  matchInferenceWindowMs,
+} from "@/lib/fixture-display-status";
 
 function filterMatches(matches: FixtureRow[], query: string): FixtureRow[] {
   const q = query.trim().toLowerCase();
@@ -37,7 +43,7 @@ function statusLabel(s: MatchStatus): string {
     case "closing_soon":
       return "Postponed";
     case "live":
-      return "Live";
+      return "Started";
     case "finished":
       return "Finished";
     default:
@@ -180,6 +186,7 @@ export default function HomePage() {
   const router = useRouter();
   const [sportKey, setSportKey] = useState<ScriptSportKey>("soccer");
   const [leagueId, setLeagueId] = useState(ALL_LEAGUES_ID);
+  const [statusFilter, setStatusFilter] = useState<FixtureListFilter>("all");
   const [query, setQuery] = useState("");
   const [fixtures, setFixtures] = useState<FixtureRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -224,7 +231,19 @@ export default function HomePage() {
       `/api/fixtures?sport=${encodeURIComponent(sportKey)}&leagueId=${encodeURIComponent(leagueId)}`,
     )
       .then(async (r) => {
-        const body = (await r.json()) as { fixtures?: FixtureRow[]; error?: string };
+        const ct = r.headers.get("content-type") ?? "";
+        const text = await r.text();
+        if (!ct.includes("json") && text.trimStart().startsWith("<")) {
+          throw new Error(
+            "Fixtures API returned HTML (not JSON). Restart the dev server or check /api/fixtures in the browser.",
+          );
+        }
+        let body: { fixtures?: FixtureRow[]; error?: string };
+        try {
+          body = JSON.parse(text) as { fixtures?: FixtureRow[]; error?: string };
+        } catch {
+          throw new Error("Fixtures API returned invalid JSON.");
+        }
         if (!r.ok) throw new Error(body.error ?? r.statusText);
         return body.fixtures ?? [];
       })
@@ -245,7 +264,11 @@ export default function HomePage() {
     };
   }, [sportKey, leagueId]);
 
-  const filtered = useMemo(() => filterMatches(fixtures, query), [fixtures, query]);
+  const searched = useMemo(() => filterMatches(fixtures, query), [fixtures, query]);
+  const filtered = useMemo(
+    () => searched.filter((m) => fixtureMatchesListFilter(m, statusFilter, nowMs)),
+    [searched, statusFilter, nowMs],
+  );
   const onOpenFromReceipt = async () => {
     const receipt = receiptInput.trim().toLowerCase();
     if (!/^0x[0-9a-f]{64}$/.test(receipt)) {
@@ -288,9 +311,12 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
-          Upcoming fixtures
-        </h2>
+        <div className="min-w-0">
+          <h2 className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
+            Upcoming fixtures
+          </h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">ESPN scoreboard · next 14 days (UTC)</p>
+        </div>
         <button
           type="button"
           onClick={() => setReceiptModalOpen(true)}
@@ -367,8 +393,9 @@ export default function HomePage() {
           </label>
         </div>
 
-        <div className="grid w-full grid-cols-2 gap-3 sm:ml-auto sm:mr-3 sm:w-auto sm:shrink-0 sm:items-end sm:justify-end">
+        <div className="grid w-full min-w-0 grid-cols-3 gap-2.5 sm:ml-auto sm:w-auto sm:max-w-[40rem] sm:shrink-0 sm:gap-3">
           <LeagueSelect
+            compact
             showLabel
             label="Sport"
             options={sportPickerOptions}
@@ -376,11 +403,20 @@ export default function HomePage() {
             onChange={onSportChange}
           />
           <LeagueSelect
+            compact
             showLabel
             label="League"
             options={leaguePickerOptions}
             value={leagueId}
             onChange={setLeagueId}
+          />
+          <LeagueSelect
+            compact
+            showLabel
+            label="Status"
+            options={FIXTURE_LIST_FILTER_OPTIONS}
+            value={statusFilter}
+            onChange={(id) => setStatusFilter(id as FixtureListFilter)}
           />
         </div>
       </div>
@@ -398,7 +434,14 @@ export default function HomePage() {
         <p className="py-8 text-center text-sm text-rose-300/90">{error}</p>
       ) : filtered.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--muted)]">
-          No upcoming matches for this sport or league, or nothing matches your search.
+          {fixtures.length === 0
+            ? "No matches in the next 14 days for this sport or league."
+            : searched.length === 0
+              ? "Nothing matches your search."
+              : `No ${
+                  FIXTURE_LIST_FILTER_OPTIONS.find((o) => o.id === statusFilter)?.label.toLowerCase() ??
+                  ""
+                } matches — try All or another filter.`}
         </p>
       ) : (
         <>

@@ -6,6 +6,9 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { FixtureClaimPayoutModal } from "@/components/fixtures/fixture-claim-payout-modal";
 import { FixtureKickoffEta } from "@/components/fixtures/fixture-kickoff-eta";
 import { FixturePlayscriptSection } from "@/components/fixtures/fixture-playscript-section";
+import { FixturePlayscriptV2Section } from "@/components/fixtures/fixture-playscript-v2-section";
+import { PlayscriptV2LegBuilder } from "@/components/fixtures/playscript-v2-leg-builder";
+import { usePlayscriptV2MatchByUrl } from "@/hooks/use-playscript-v2-match-by-url";
 import { deriveDisplayMatchStatus } from "@/lib/fixture-display-status";
 import type { FixtureRow, MatchStatus } from "@/lib/fixtures-shared";
 import { usePlayscriptMatchByUrl } from "@/hooks/use-playscript-match-by-url";
@@ -64,6 +67,7 @@ type Props = {
 export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const [v2LegMask, setV2LegMask] = useState(0);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowMs(Date.now()), 30_000);
@@ -92,6 +96,8 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
   const showLiveStatsBlock = displayStatus === "live";
 
   const matchByUrl = usePlayscriptMatchByUrl(lookupeventUrl);
+  const v2MatchQ = usePlayscriptV2MatchByUrl(lookupeventUrl);
+  const v2MatchRegistered = v2MatchQ.data?.matchId != null;
   const resolvedMatchId =
     matchByUrl.data?.matchId !== null && matchByUrl.data?.matchId !== undefined
       ? Number(matchByUrl.data.matchId)
@@ -120,10 +126,6 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
       claim: d.claim,
     };
   }, [userScriptQ.data]);
-
-  useEffect(() => {
-    if (!claimModalData) setClaimModalOpen(false);
-  }, [claimModalData]);
 
   const showKickoffCountdown =
     displayStatus === "open" && Number.isFinite(kickoffMs) && kickoffMs > nowMs;
@@ -278,7 +280,7 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
                       {claimModalData.claimed ? "Claimed" : "Claim"}
                     </button>
                     <FixtureClaimPayoutModal
-                      open={claimModalOpen}
+                      open={claimModalOpen && claimModalData !== null}
                       onClose={() => setClaimModalOpen(false)}
                       scriptId={claimModalData.scriptId}
                       stakeFormatted={claimModalData.stakeFormatted}
@@ -294,6 +296,29 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
           </div>
         </section>
       ) : null}
+
+      {v2MatchRegistered ? (
+        <PlayscriptV2LegBuilder
+          fixtureId={fixture.id}
+          homeTeam={home}
+          awayTeam={away}
+          sportKey={fixture.sportKey}
+          picksEnabled={canEditScripts}
+          onLegMaskChange={setV2LegMask}
+        />
+      ) : null}
+
+      <FixturePlayscriptV2Section
+        lookupeventUrl={lookupeventUrl}
+        fixtureId={fixture.id}
+        leagueSlug={fixture.sourceLeagueId ?? ""}
+        homeTeam={home}
+        awayTeam={away}
+        sportKey={fixture.sportKey}
+        kickoffUtc={fixture.kickoffUtc}
+        canRegister={canEditScripts}
+        legMask12={v2LegMask}
+      />
 
       <FixturePlayscriptSection
         lookupeventUrl={lookupeventUrl}

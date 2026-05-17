@@ -60,21 +60,7 @@ export function FixturePlayscriptSection({
     (userScriptQ.isPending || userScriptQ.isFetching);
 
   if (!env.ok) {
-    return (
-      <section className="border-t border-[var(--border)] pt-8">
-        <p className="max-w-xl text-sm text-[var(--muted)]">
-          Onchain script builder needs{" "}
-          <code className="rounded bg-[var(--surface)] px-1 text-xs text-[var(--foreground)]">
-            NEXT_PUBLIC_PLAY_TOKEN_ADDRESS
-          </code>{" "}
-          and{" "}
-          <code className="rounded bg-[var(--surface)] px-1 text-xs text-[var(--foreground)]">
-            NEXT_PUBLIC_PLAYSCRIPT_CORE_ADDRESS
-          </code>{" "}
-          (Somnia deployment). {env.reason}
-        </p>
-      </section>
-    );
+    return null;
   }
 
   if (q.isPending || q.isFetching) {
@@ -100,15 +86,7 @@ export function FixturePlayscriptSection({
   }
 
   if (matchId === null) {
-    return (
-      <section className="border-t border-[var(--border)] pt-8">
-        <p className="max-w-xl text-sm text-[var(--muted)]">
-          No onchain match uses this exact TheSportsDB URL yet. After the owner registers this
-          event on PlayscriptCore (same <code className="text-xs">lookupevent.php?id=…</code> URL),
-          script slots appear here.
-        </p>
-      </section>
-    );
+    return null;
   }
 
   return (

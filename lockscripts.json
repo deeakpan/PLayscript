@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "network": "somnia",
+  "kernel": "0xC61B75B5628F6651BdD9cE8C902b4f610eE0ED31",
+  "positions": "0xe85B1e09a544E37902495E0379E8DcEd5BFf8D34",
+  "playToken": "0xEFA95569C06B8D77fC80092cf5BAa7f766728b83",
+  "matchId": "2",
+  "home": "Manchester City",
+  "away": "Crystal Palace",
+  "expectedResolvedBitmask": 31,
+  "expectedFinalScore": "3-0",
+  "lockedAt": "2026-05-17T15:18:51.531Z",
+  "locks": [
+    {
+      "label": "loser-btts-miss",
+      "expectWin": false,
+      "matchId": "2",
+      "legMask12": 47,
+      "legIds": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "playAmountRequestedHuman": "55",
+      "playAmountRequestedWei": "55000000000000000000",
+      "lockTx": "0xae88d929fd047b07a880fd2c477b158fddcb4018eac439556270020ed24ec204",
+      "lockBlock": "384993076",
+      "scriptTokenId": "40469753290671463182370590828333933188111609146256745597384194920216848678533",
+      "netStakeWei": "54725000000000000000",
+      "wallet": "0x68ac96ce64d62386b1a5e2dff8f0f01feed46e09"
+    },
+    {
+      "label": "loser-away-win-miss",
+      "expectWin": false,
+      "matchId": "2",
+      "legMask12": 271,
+      "legIds": [
+        1,
+        2,
+        3,
+        4,
+        9
+      ],
+      "playAmountRequestedHuman": "55",
+      "playAmountRequestedWei": "55000000000000000000",
+      "lockTx": "0x3206e3fb7741ea23a9d338087247c15e13d6535d1947d054bb7fc4ae056d44c8",
+      "lockBlock": "384993107",
+      "scriptTokenId": "73253210274225422821480472528978281281656954529586870117650079544393848384258",
+      "netStakeWei": "54725000000000000000",
+      "wallet": "0x68ac96ce64d62386b1a5e2dff8f0f01feed46e09"
+    },
+    {
+      "label": "winner-5of5",
+      "expectWin": true,
+      "matchId": "2",
+      "legMask12": 31,
+      "legIds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "playAmountRequestedHuman": "500",
+      "playAmountRequestedWei": "500000000000000000000",
+      "lockTx": "0x477112d19a7cbb023f30fbd2e855dbcb40ab26be59910bba18bf2d577b4d11cb",
+      "lockBlock": "384993182",
+      "scriptTokenId": "56030541871243572424956756807168269331337814967834936570701084253264484832132",
+      "netStakeWei": "48422712984000000000",
+      "wallet": "0x68ac96ce64d62386b1a5e2dff8f0f01feed46e09"
+    }
+  ],
+  "claims": [
+    {
+      "label": "loser-btts-miss",
+      "skipped": true,
+      "reason": "expectWin=false"
+    },
+    {
+      "label": "loser-away-win-miss",
+      "skipped": true,
+      "reason": "expectWin=false"
+    },
+    {
+      "label": "winner-5of5",
+      "claimTx": "0xcbad13075c54856cc76682e44dee6bfe29c8ae7f837847faf929af702bb1977d",
+      "amountWei": "48422712984000000000"
+    }
+  ],
+  "claimedAt": "2026-05-17T15:23:56.384Z"
+}

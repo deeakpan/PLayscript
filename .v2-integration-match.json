@@ -1,0 +1,30 @@
+{
+  "kernel": "0xC61B75B5628F6651BdD9cE8C902b4f610eE0ED31",
+  "positions": "0xe85B1e09a544E37902495E0379E8DcEd5BFf8D34",
+  "matchId": "2",
+  "eventId": "740902",
+  "leagueSlug": "soccer/eng.1",
+  "home": "Manchester City",
+  "away": "Crystal Palace",
+  "kickoff": "1779031221",
+  "finalizeDelaySec": 120,
+  "kickoffOffsetSec": 240,
+  "registerTx": "0x1e291504c81329145654e8dfe72f378c6f4c3d7aee6ad5cc97fb46e184b964e2",
+  "legKinds": [
+    1,
+    4,
+    7,
+    13,
+    16,
+    6,
+    3,
+    2,
+    8,
+    5,
+    14,
+    15
+  ],
+  "expectedResolvedBitmask": 31,
+  "registeredAt": "2026-05-17T15:16:29.229Z",
+  "registerer": "0x68ac96ce64d62386b1a5e2dff8f0f01feed46e09"
+}

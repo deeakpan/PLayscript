@@ -38,6 +38,9 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# hardhat v2 test helper (local)
+.v2-test-match.tmp.json
 next-env.d.ts
 
 # hardhat

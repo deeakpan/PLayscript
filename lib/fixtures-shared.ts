@@ -15,15 +15,17 @@ export type UpcomingLeagueConfig = {
   sportKey: ScriptSportKey;
 };
 
+/** ESPN `site.api.espn.com` league slugs (see `espn-api-docs.md`). */
 export const UPCOMING_LEAGUES: readonly UpcomingLeagueConfig[] = [
-  { id: "4480", label: "UEFA Champions League", sportKey: "soccer" },
-  { id: "4328", label: "English Premier League", sportKey: "soccer" },
-  { id: "4330", label: "Scottish Premier League", sportKey: "soccer" },
-  { id: "4335", label: "Spanish La Liga", sportKey: "soccer" },
-  { id: "4396", label: "English League 1", sportKey: "soccer" },
-  { id: "4387", label: "NBA", sportKey: "basketball" },
-  { id: "4391", label: "NFL", sportKey: "american_football" },
-  { id: "4424", label: "MLB", sportKey: "baseball" },
+  { id: "soccer/uefa.champions", label: "UEFA Champions League", sportKey: "soccer" },
+  { id: "soccer/eng.1", label: "English Premier League", sportKey: "soccer" },
+  { id: "soccer/eng.2", label: "English Championship", sportKey: "soccer" },
+  { id: "soccer/esp.1", label: "Spanish La Liga", sportKey: "soccer" },
+  { id: "soccer/ita.1", label: "Italian Serie A", sportKey: "soccer" },
+  { id: "soccer/ger.1", label: "German Bundesliga", sportKey: "soccer" },
+  { id: "basketball/nba", label: "NBA", sportKey: "basketball" },
+  { id: "football/nfl", label: "NFL", sportKey: "american_football" },
+  { id: "baseball/mlb", label: "MLB", sportKey: "baseball" },
 ];
 
 const LEAGUE_ID_TO_SPORT = new Map<string, ScriptSportKey>(
@@ -63,7 +65,7 @@ export function getLeaguePickerOptions(sportKey: ScriptSportKey): LeagueOption[]
   ];
 }
 
-/** TheSportsDB league ids used when “All leagues” is selected for this sport. */
+/** ESPN league slugs used when “All leagues” is selected for this sport. */
 export function getLeagueIdsForSport(sportKey: ScriptSportKey): readonly string[] {
   return UPCOMING_LEAGUES.filter((l) => l.sportKey === sportKey).map((l) => l.id);
 }
@@ -95,12 +97,12 @@ export interface FixtureRow {
   /** ISO-8601 instant in UTC (see `kickoffUtcIso` in server mapper). */
   kickoffUtc: string;
   status: MatchStatus;
-  /** TheSportsDB `idLeague` when present — disambiguates links when `idEvent` alone is not unique. */
+  /** ESPN league slug (e.g. `soccer/eng.1`) — disambiguates detail links when `id` alone is not unique. */
   sourceLeagueId?: string;
   /** Present when the API reports line goals (live or finished). */
   homeScore?: number;
   awayScore?: number;
-  /** TheSportsDB `strStatus` (e.g. "Second Half", "Not Started") for live/detail copy. */
+  /** ESPN status name (e.g. `STATUS_FIRST_HALF`) for live/detail copy. */
   statusDetail?: string;
 }
 

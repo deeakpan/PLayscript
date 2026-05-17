@@ -1,0 +1,1156 @@
+{
+  "generatedAt": "2026-05-15T23:00:06.518Z",
+  "probes": {
+    "soccer_eng1": {
+      "ok": true,
+      "sport": "soccer",
+      "league": "soccer/eng.1",
+      "eventId": "740902",
+      "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard/740902",
+      "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/summary?event=740902",
+      "final": {
+        "home": "3",
+        "away": "0",
+        "status": "STATUS_FULL_TIME"
+      },
+      "soccerDetails": {
+        "yellowCardCount": 2,
+        "redCardCount": 0,
+        "detailCount": 5
+      },
+      "summaryHalfTimeBoxscoreTeams": {},
+      "soccerHalvesFromSummaryHeader": {
+        "headerHomeTeam": "Manchester City",
+        "headerAwayTeam": "Crystal Palace",
+        "half1Home_display": "2",
+        "half1Away_display": "0",
+        "half2Home_display": "1",
+        "half2Away_display": "0",
+        "rawHalfArrays": {
+          "home": [
+            "2",
+            "1"
+          ],
+          "away": [
+            "0",
+            "0"
+          ]
+        }
+      },
+      "summaryTeamStatistics": [
+        {
+          "homeAway": "home",
+          "displayName": "Manchester City",
+          "yellowCards": "0",
+          "redCards": "0",
+          "yellowCardsPath": "boxscore.teams[0].statistics[1].displayValue",
+          "redCardsPath": "boxscore.teams[0].statistics[2].displayValue"
+        },
+        {
+          "homeAway": "away",
+          "displayName": "Crystal Palace",
+          "yellowCards": "2",
+          "redCards": "0",
+          "yellowCardsPath": "boxscore.teams[1].statistics[1].displayValue",
+          "redCardsPath": "boxscore.teams[1].statistics[2].displayValue"
+        }
+      ],
+      "selectors": {
+        "homeScore": "competitions[0].competitors[0].score",
+        "awayScore": "competitions[0].competitors[1].score",
+        "status": "competitions[0].status.type.name",
+        "homeTeam": "competitions[0].competitors[0].team.displayName",
+        "awayTeam": "competitions[0].competitors[1].team.displayName",
+        "htHomeBoxscoreTeams": "boxscore.teams[0].linescores[0].value",
+        "htAwayBoxscoreTeams": "boxscore.teams[1].linescores[0].value",
+        "htHome": "boxscore.teams[0].linescores[0].value",
+        "htAway": "boxscore.teams[1].linescores[0].value",
+        "htHome_header_1stHalf_display": "header.competitions[0].competitors[0].linescores[0].displayValue",
+        "htAway_header_1stHalf_display": "header.competitions[0].competitors[1].linescores[0].displayValue",
+        "htHomeAwayHeaderPairs": "alternate: map by homeAway in app; see soccerHalvesFromSummaryHeader"
+      }
+    },
+    "soccer_eng1_alt_meta": {
+      "resolvedEventId": "740705",
+      "dateStr": "20251108",
+      "league": "soccer/eng.1",
+      "shortName": "MAN @ TOT"
+    },
+    "soccer_eng1_alt": {
+      "ok": true,
+      "sport": "soccer",
+      "league": "soccer/eng.1",
+      "eventId": "740705",
+      "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard/740705",
+      "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/summary?event=740705",
+      "final": {
+        "home": "2",
+        "away": "2",
+        "status": "STATUS_FULL_TIME"
+      },
+      "soccerDetails": {
+        "yellowCardCount": 6,
+        "redCardCount": 0,
+        "detailCount": 10
+      },
+      "summaryHalfTimeBoxscoreTeams": {},
+      "soccerHalvesFromSummaryHeader": {
+        "headerHomeTeam": "Tottenham Hotspur",
+        "headerAwayTeam": "Manchester United",
+        "half1Home_display": "0",
+        "half1Away_display": "1",
+        "half2Home_display": "2",
+        "half2Away_display": "1",
+        "rawHalfArrays": {
+          "home": [
+            "0",
+            "2"
+          ],
+          "away": [
+            "1",
+            "1"
+          ]
+        }
+      },
+      "summaryTeamStatistics": [
+        {
+          "homeAway": "home",
+          "displayName": "Tottenham Hotspur",
+          "yellowCards": "5",
+          "redCards": "0",
+          "yellowCardsPath": "boxscore.teams[0].statistics[1].displayValue",
+          "redCardsPath": "boxscore.teams[0].statistics[2].displayValue"
+        },
+        {
+          "homeAway": "away",
+          "displayName": "Manchester United",
+          "yellowCards": "1",
+          "redCards": "0",
+          "yellowCardsPath": "boxscore.teams[1].statistics[1].displayValue",
+          "redCardsPath": "boxscore.teams[1].statistics[2].displayValue"
+        }
+      ],
+      "selectors": {
+        "homeScore": "competitions[0].competitors[0].score",
+        "awayScore": "competitions[0].competitors[1].score",
+        "status": "competitions[0].status.type.name",
+        "homeTeam": "competitions[0].competitors[0].team.displayName",
+        "awayTeam": "competitions[0].competitors[1].team.displayName",
+        "htHomeBoxscoreTeams": "boxscore.teams[0].linescores[0].value",
+        "htAwayBoxscoreTeams": "boxscore.teams[1].linescores[0].value",
+        "htHome": "boxscore.teams[0].linescores[0].value",
+        "htAway": "boxscore.teams[1].linescores[0].value",
+        "htHome_header_1stHalf_display": "header.competitions[0].competitors[0].linescores[0].displayValue",
+        "htAway_header_1stHalf_display": "header.competitions[0].competitors[1].linescores[0].displayValue",
+        "htHomeAwayHeaderPairs": "alternate: map by homeAway in app; see soccerHalvesFromSummaryHeader"
+      }
+    },
+    "soccer_eng1_half_source_scan": {
+      "740696": {
+        "meta": {
+          "eventId": "740696",
+          "dateStr": "20251108",
+          "label": "BUR @ WHU"
+        },
+        "diagnose": {
+          "ok": true,
+          "eventId": "740696",
+          "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/summary?event=740696",
+          "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard/740696",
+          "half_split_note": "Prefer header.competitions[0].competitors[home|away].linescores for half-by-half goals; boxscore.teams[].linescores often len 0 (verified multiple leagues).",
+          "verdict": "HEADER_ONLY",
+          "headerHalves": {
+            "headerHomeTeam": "West Ham United",
+            "headerAwayTeam": "Burnley",
+            "half1Home_display": "1",
+            "half1Away_display": "1",
+            "half2Home_display": "2",
+            "half2Away_display": "1",
+            "rawHalfArrays": {
+              "home": [
+                "1",
+                "2"
+              ],
+              "away": [
+                "1",
+                "1"
+              ]
+            }
+          },
+          "headerFinalScores": {
+            "home": "3",
+            "away": "2"
+          },
+          "boxscoreTeamsLinescoresByHomeAway": {
+            "home": {
+              "bucketIndex": 0,
+              "len": 0,
+              "firstTwo": []
+            },
+            "away": {
+              "bucketIndex": 1,
+              "len": 0,
+              "firstTwo": []
+            }
+          },
+          "boxscoreTeamsOrder": [
+            {
+              "i": 0,
+              "homeAway": "home",
+              "team": "West Ham United",
+              "linescoreLen": 0
+            },
+            {
+              "i": 1,
+              "homeAway": "away",
+              "team": "Burnley",
+              "linescoreLen": 0
+            }
+          ],
+          "discipline_scoreboard_details": {
+            "scoreboard_http_ok": true,
+            "yellowCard_true_count": 4,
+            "redCard_true_count": 0,
+            "detail_entry_count": 9
+          },
+          "discipline_summary_team_statistics": [
+            {
+              "bucketIndex": 0,
+              "homeAway": "home",
+              "displayName": "West Ham United",
+              "yellowCards_display": "2",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[0].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[0].statistics[2].displayValue"
+            },
+            {
+              "bucketIndex": 1,
+              "homeAway": "away",
+              "displayName": "Burnley",
+              "yellowCards_display": "2",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[1].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[1].statistics[2].displayValue"
+            }
+          ]
+        }
+      },
+      "740701": {
+        "meta": {
+          "eventId": "740701",
+          "dateStr": "20251108",
+          "label": "FUL @ EVE"
+        },
+        "diagnose": {
+          "ok": true,
+          "eventId": "740701",
+          "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/summary?event=740701",
+          "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard/740701",
+          "half_split_note": "Prefer header.competitions[0].competitors[home|away].linescores for half-by-half goals; boxscore.teams[].linescores often len 0 (verified multiple leagues).",
+          "verdict": "HEADER_ONLY",
+          "headerHalves": {
+            "headerHomeTeam": "Everton",
+            "headerAwayTeam": "Fulham",
+            "half1Home_display": "1",
+            "half1Away_display": "0",
+            "half2Home_display": "1",
+            "half2Away_display": "0",
+            "rawHalfArrays": {
+              "home": [
+                "1",
+                "1"
+              ],
+              "away": [
+                "0",
+                "0"
+              ]
+            }
+          },
+          "headerFinalScores": {
+            "home": "2",
+            "away": "0"
+          },
+          "boxscoreTeamsLinescoresByHomeAway": {
+            "home": {
+              "bucketIndex": 0,
+              "len": 0,
+              "firstTwo": []
+            },
+            "away": {
+              "bucketIndex": 1,
+              "len": 0,
+              "firstTwo": []
+            }
+          },
+          "boxscoreTeamsOrder": [
+            {
+              "i": 0,
+              "homeAway": "home",
+              "team": "Everton",
+              "linescoreLen": 0
+            },
+            {
+              "i": 1,
+              "homeAway": "away",
+              "team": "Fulham",
+              "linescoreLen": 0
+            }
+          ],
+          "discipline_scoreboard_details": {
+            "scoreboard_http_ok": true,
+            "yellowCard_true_count": 4,
+            "redCard_true_count": 0,
+            "detail_entry_count": 6
+          },
+          "discipline_summary_team_statistics": [
+            {
+              "bucketIndex": 0,
+              "homeAway": "home",
+              "displayName": "Everton",
+              "yellowCards_display": "2",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[0].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[0].statistics[2].displayValue"
+            },
+            {
+              "bucketIndex": 1,
+              "homeAway": "away",
+              "displayName": "Fulham",
+              "yellowCards_display": "2",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[1].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[1].statistics[2].displayValue"
+            }
+          ]
+        }
+      },
+      "740704": {
+        "meta": {
+          "eventId": "740704",
+          "dateStr": "20251108",
+          "label": "ARS @ SUN"
+        },
+        "diagnose": {
+          "ok": true,
+          "eventId": "740704",
+          "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/summary?event=740704",
+          "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard/740704",
+          "half_split_note": "Prefer header.competitions[0].competitors[home|away].linescores for half-by-half goals; boxscore.teams[].linescores often len 0 (verified multiple leagues).",
+          "verdict": "HEADER_ONLY",
+          "headerHalves": {
+            "headerHomeTeam": "Sunderland",
+            "headerAwayTeam": "Arsenal",
+            "half1Home_display": "1",
+            "half1Away_display": "0",
+            "half2Home_display": "1",
+            "half2Away_display": "2",
+            "rawHalfArrays": {
+              "home": [
+                "1",
+                "1"
+              ],
+              "away": [
+                "0",
+                "2"
+              ]
+            }
+          },
+          "headerFinalScores": {
+            "home": "2",
+            "away": "2"
+          },
+          "boxscoreTeamsLinescoresByHomeAway": {
+            "home": {
+              "bucketIndex": 0,
+              "len": 0,
+              "firstTwo": []
+            },
+            "away": {
+              "bucketIndex": 1,
+              "len": 0,
+              "firstTwo": []
+            }
+          },
+          "boxscoreTeamsOrder": [
+            {
+              "i": 0,
+              "homeAway": "home",
+              "team": "Sunderland",
+              "linescoreLen": 0
+            },
+            {
+              "i": 1,
+              "homeAway": "away",
+              "team": "Arsenal",
+              "linescoreLen": 0
+            }
+          ],
+          "discipline_scoreboard_details": {
+            "scoreboard_http_ok": true,
+            "yellowCard_true_count": 3,
+            "redCard_true_count": 0,
+            "detail_entry_count": 7
+          },
+          "discipline_summary_team_statistics": [
+            {
+              "bucketIndex": 0,
+              "homeAway": "home",
+              "displayName": "Sunderland",
+              "yellowCards_display": "2",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[0].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[0].statistics[2].displayValue"
+            },
+            {
+              "bucketIndex": 1,
+              "homeAway": "away",
+              "displayName": "Arsenal",
+              "yellowCards_display": "1",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[1].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[1].statistics[2].displayValue"
+            }
+          ]
+        }
+      }
+    },
+    "soccer_cross_league_half_probe": {
+      "esp.1": {
+        "ok": true,
+        "league": "soccer/esp.1",
+        "eventMeta": {
+          "eventId": "748240",
+          "dateStr": "20251026",
+          "label": "LEV @ MLL"
+        },
+        "diagnose": {
+          "ok": true,
+          "eventId": "748240",
+          "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/summary?event=748240",
+          "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard/748240",
+          "half_split_note": "Prefer header.competitions[0].competitors[home|away].linescores for half-by-half goals; boxscore.teams[].linescores often len 0 (verified multiple leagues).",
+          "verdict": "HEADER_ONLY",
+          "headerHalves": {
+            "headerHomeTeam": "Mallorca",
+            "headerAwayTeam": "Levante",
+            "half1Home_display": "0",
+            "half1Away_display": "1",
+            "half2Home_display": "1",
+            "half2Away_display": "0",
+            "rawHalfArrays": {
+              "home": [
+                "0",
+                "1"
+              ],
+              "away": [
+                "1",
+                "0"
+              ]
+            }
+          },
+          "headerFinalScores": {
+            "home": "1",
+            "away": "1"
+          },
+          "boxscoreTeamsLinescoresByHomeAway": {
+            "home": {
+              "bucketIndex": 0,
+              "len": 0,
+              "firstTwo": []
+            },
+            "away": {
+              "bucketIndex": 1,
+              "len": 0,
+              "firstTwo": []
+            }
+          },
+          "boxscoreTeamsOrder": [
+            {
+              "i": 0,
+              "homeAway": "home",
+              "team": "Mallorca",
+              "linescoreLen": 0
+            },
+            {
+              "i": 1,
+              "homeAway": "away",
+              "team": "Levante",
+              "linescoreLen": 0
+            }
+          ],
+          "discipline_scoreboard_details": {
+            "scoreboard_http_ok": true,
+            "yellowCard_true_count": 5,
+            "redCard_true_count": 0,
+            "detail_entry_count": 7
+          },
+          "discipline_summary_team_statistics": [
+            {
+              "bucketIndex": 0,
+              "homeAway": "home",
+              "displayName": "Mallorca",
+              "yellowCards_display": "3",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[0].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[0].statistics[2].displayValue"
+            },
+            {
+              "bucketIndex": 1,
+              "homeAway": "away",
+              "displayName": "Levante",
+              "yellowCards_display": "2",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[1].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[1].statistics[2].displayValue"
+            }
+          ]
+        }
+      },
+      "ita.1": {
+        "ok": true,
+        "league": "soccer/ita.1",
+        "eventMeta": {
+          "eventId": "736857",
+          "dateStr": "20251026",
+          "label": "GEN @ TOR"
+        },
+        "diagnose": {
+          "ok": true,
+          "eventId": "736857",
+          "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/summary?event=736857",
+          "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard/736857",
+          "half_split_note": "Prefer header.competitions[0].competitors[home|away].linescores for half-by-half goals; boxscore.teams[].linescores often len 0 (verified multiple leagues).",
+          "verdict": "HEADER_ONLY",
+          "headerHalves": {
+            "headerHomeTeam": "Torino",
+            "headerAwayTeam": "Genoa",
+            "half1Home_display": "0",
+            "half1Away_display": "1",
+            "half2Home_display": "2",
+            "half2Away_display": "0",
+            "rawHalfArrays": {
+              "home": [
+                "0",
+                "2"
+              ],
+              "away": [
+                "1",
+                "0"
+              ]
+            }
+          },
+          "headerFinalScores": {
+            "home": "2",
+            "away": "1"
+          },
+          "boxscoreTeamsLinescoresByHomeAway": {
+            "home": {
+              "bucketIndex": 0,
+              "len": 0,
+              "firstTwo": []
+            },
+            "away": {
+              "bucketIndex": 1,
+              "len": 0,
+              "firstTwo": []
+            }
+          },
+          "boxscoreTeamsOrder": [
+            {
+              "i": 0,
+              "homeAway": "home",
+              "team": "Torino",
+              "linescoreLen": 0
+            },
+            {
+              "i": 1,
+              "homeAway": "away",
+              "team": "Genoa",
+              "linescoreLen": 0
+            }
+          ],
+          "discipline_scoreboard_details": {
+            "scoreboard_http_ok": true,
+            "yellowCard_true_count": 4,
+            "redCard_true_count": 0,
+            "detail_entry_count": 7
+          },
+          "discipline_summary_team_statistics": [
+            {
+              "bucketIndex": 0,
+              "homeAway": "home",
+              "displayName": "Torino",
+              "yellowCards_display": "2",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[0].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[0].statistics[2].displayValue"
+            },
+            {
+              "bucketIndex": 1,
+              "homeAway": "away",
+              "displayName": "Genoa",
+              "yellowCards_display": "2",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[1].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[1].statistics[2].displayValue"
+            }
+          ]
+        }
+      },
+      "ger.1": {
+        "ok": true,
+        "league": "soccer/ger.1",
+        "eventMeta": {
+          "eventId": "746786",
+          "dateStr": "20251026",
+          "label": "SCF @ B04"
+        },
+        "diagnose": {
+          "ok": true,
+          "eventId": "746786",
+          "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/summary?event=746786",
+          "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard/746786",
+          "half_split_note": "Prefer header.competitions[0].competitors[home|away].linescores for half-by-half goals; boxscore.teams[].linescores often len 0 (verified multiple leagues).",
+          "verdict": "HEADER_ONLY",
+          "headerHalves": {
+            "headerHomeTeam": "Bayer Leverkusen",
+            "headerAwayTeam": "SC Freiburg",
+            "half1Home_display": "1",
+            "half1Away_display": "0",
+            "half2Home_display": "1",
+            "half2Away_display": "0",
+            "rawHalfArrays": {
+              "home": [
+                "1",
+                "1"
+              ],
+              "away": [
+                "0",
+                "0"
+              ]
+            }
+          },
+          "headerFinalScores": {
+            "home": "2",
+            "away": "0"
+          },
+          "boxscoreTeamsLinescoresByHomeAway": {
+            "home": {
+              "bucketIndex": 0,
+              "len": 0,
+              "firstTwo": []
+            },
+            "away": {
+              "bucketIndex": 1,
+              "len": 0,
+              "firstTwo": []
+            }
+          },
+          "boxscoreTeamsOrder": [
+            {
+              "i": 0,
+              "homeAway": "home",
+              "team": "Bayer Leverkusen",
+              "linescoreLen": 0
+            },
+            {
+              "i": 1,
+              "homeAway": "away",
+              "team": "SC Freiburg",
+              "linescoreLen": 0
+            }
+          ],
+          "discipline_scoreboard_details": {
+            "scoreboard_http_ok": true,
+            "yellowCard_true_count": 2,
+            "redCard_true_count": 1,
+            "detail_entry_count": 5
+          },
+          "discipline_summary_team_statistics": [
+            {
+              "bucketIndex": 0,
+              "homeAway": "home",
+              "displayName": "Bayer Leverkusen",
+              "yellowCards_display": "1",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[0].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[0].statistics[2].displayValue"
+            },
+            {
+              "bucketIndex": 1,
+              "homeAway": "away",
+              "displayName": "SC Freiburg",
+              "yellowCards_display": "0",
+              "redCards_display": "1",
+              "yellowCardsPath": "boxscore.teams[1].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[1].statistics[2].displayValue"
+            }
+          ]
+        }
+      },
+      "uefa.champions": {
+        "ok": true,
+        "league": "soccer/uefa.champions",
+        "eventMeta": {
+          "eventId": "757716",
+          "dateStr": "20251105",
+          "label": "CHE @ QAR"
+        },
+        "diagnose": {
+          "ok": true,
+          "eventId": "757716",
+          "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/summary?event=757716",
+          "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard/757716",
+          "half_split_note": "Prefer header.competitions[0].competitors[home|away].linescores for half-by-half goals; boxscore.teams[].linescores often len 0 (verified multiple leagues).",
+          "verdict": "HEADER_ONLY",
+          "headerHalves": {
+            "headerHomeTeam": "FK Qarabag",
+            "headerAwayTeam": "Chelsea",
+            "half1Home_display": "2",
+            "half1Away_display": "1",
+            "half2Home_display": "0",
+            "half2Away_display": "1",
+            "rawHalfArrays": {
+              "home": [
+                "2",
+                "0"
+              ],
+              "away": [
+                "1",
+                "1"
+              ]
+            }
+          },
+          "headerFinalScores": {
+            "home": "2",
+            "away": "2"
+          },
+          "boxscoreTeamsLinescoresByHomeAway": {
+            "home": {
+              "bucketIndex": 0,
+              "len": 0,
+              "firstTwo": []
+            },
+            "away": {
+              "bucketIndex": 1,
+              "len": 0,
+              "firstTwo": []
+            }
+          },
+          "boxscoreTeamsOrder": [
+            {
+              "i": 0,
+              "homeAway": "home",
+              "team": "FK Qarabag",
+              "linescoreLen": 0
+            },
+            {
+              "i": 1,
+              "homeAway": "away",
+              "team": "Chelsea",
+              "linescoreLen": 0
+            }
+          ],
+          "discipline_scoreboard_details": {
+            "scoreboard_http_ok": true,
+            "yellowCard_true_count": 5,
+            "redCard_true_count": 0,
+            "detail_entry_count": 9
+          },
+          "discipline_summary_team_statistics": [
+            {
+              "bucketIndex": 0,
+              "homeAway": "home",
+              "displayName": "FK Qarabag",
+              "yellowCards_display": "2",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[0].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[0].statistics[2].displayValue"
+            },
+            {
+              "bucketIndex": 1,
+              "homeAway": "away",
+              "displayName": "Chelsea",
+              "yellowCards_display": "3",
+              "redCards_display": "0",
+              "yellowCardsPath": "boxscore.teams[1].statistics[1].displayValue",
+              "redCardsPath": "boxscore.teams[1].statistics[2].displayValue"
+            }
+          ]
+        }
+      }
+    },
+    "nba": {
+      "ok": true,
+      "key": "nba",
+      "league": "basketball/nba",
+      "eventId": "400878160",
+      "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard/400878160",
+      "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=400878160",
+      "final": {
+        "home": "89",
+        "away": "93",
+        "status": "STATUS_FINAL"
+      },
+      "scoreboard_period_scores": {
+        "homeTeam": "Golden State Warriors",
+        "awayTeam": "Cleveland Cavaliers",
+        "home_periods": [
+          {
+            "idx": 0,
+            "period": 1,
+            "value": 22,
+            "displayValue": "22",
+            "shortName": null
+          },
+          {
+            "idx": 1,
+            "period": 2,
+            "value": 27,
+            "displayValue": "27",
+            "shortName": null
+          },
+          {
+            "idx": 2,
+            "period": 3,
+            "value": 27,
+            "displayValue": "27",
+            "shortName": null
+          },
+          {
+            "idx": 3,
+            "period": 4,
+            "value": 13,
+            "displayValue": "13",
+            "shortName": null
+          }
+        ],
+        "away_periods": [
+          {
+            "idx": 0,
+            "period": 1,
+            "value": 23,
+            "displayValue": "23",
+            "shortName": null
+          },
+          {
+            "idx": 1,
+            "period": 2,
+            "value": 19,
+            "displayValue": "19",
+            "shortName": null
+          },
+          {
+            "idx": 2,
+            "period": 3,
+            "value": 33,
+            "displayValue": "33",
+            "shortName": null
+          },
+          {
+            "idx": 3,
+            "period": 4,
+            "value": 18,
+            "displayValue": "18",
+            "shortName": null
+          }
+        ],
+        "periodCount_home": 4,
+        "halfTotals": {
+          "regulationFirstHalf_home": 49,
+          "regulationFirstHalf_away": 42
+        }
+      },
+      "summary_boxscore_team_periods": [
+        {
+          "bucketIndex": 0,
+          "homeAway": "away",
+          "displayName": "Cleveland Cavaliers",
+          "periods": []
+        },
+        {
+          "bucketIndex": 1,
+          "homeAway": "home",
+          "displayName": "Golden State Warriors",
+          "periods": []
+        }
+      ]
+    },
+    "nfl": {
+      "ok": true,
+      "key": "nfl",
+      "league": "football/nfl",
+      "eventId": "401671764",
+      "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard/401671764",
+      "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401671764",
+      "final": {
+        "home": "9",
+        "away": "47",
+        "status": "STATUS_FINAL"
+      },
+      "scoreboard_period_scores": {
+        "homeTeam": "Dallas Cowboys",
+        "awayTeam": "Detroit Lions",
+        "home_periods": [
+          {
+            "idx": 0,
+            "period": 1,
+            "value": 3,
+            "displayValue": "3",
+            "shortName": null
+          },
+          {
+            "idx": 1,
+            "period": 2,
+            "value": 3,
+            "displayValue": "3",
+            "shortName": null
+          },
+          {
+            "idx": 2,
+            "period": 3,
+            "value": 3,
+            "displayValue": "3",
+            "shortName": null
+          },
+          {
+            "idx": 3,
+            "period": 4,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          }
+        ],
+        "away_periods": [
+          {
+            "idx": 0,
+            "period": 1,
+            "value": 7,
+            "displayValue": "7",
+            "shortName": null
+          },
+          {
+            "idx": 1,
+            "period": 2,
+            "value": 20,
+            "displayValue": "20",
+            "shortName": null
+          },
+          {
+            "idx": 2,
+            "period": 3,
+            "value": 10,
+            "displayValue": "10",
+            "shortName": null
+          },
+          {
+            "idx": 3,
+            "period": 4,
+            "value": 10,
+            "displayValue": "10",
+            "shortName": null
+          }
+        ],
+        "periodCount_home": 4,
+        "halfTotals": {
+          "firstHalf_home": 6,
+          "firstHalf_away": 27
+        }
+      },
+      "summary_boxscore_team_periods": [
+        {
+          "bucketIndex": 0,
+          "homeAway": "away",
+          "displayName": "Detroit Lions",
+          "periods": []
+        },
+        {
+          "bucketIndex": 1,
+          "homeAway": "home",
+          "displayName": "Dallas Cowboys",
+          "periods": []
+        }
+      ]
+    },
+    "mlb": {
+      "ok": true,
+      "key": "mlb",
+      "league": "baseball/mlb",
+      "eventId": "401695561",
+      "scoreboardUrl": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard/401695561",
+      "summaryUrl": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/summary?event=401695561",
+      "final": {
+        "home": "5",
+        "away": "2",
+        "status": "STATUS_FINAL"
+      },
+      "scoreboard_period_scores": {
+        "homeTeam": "Atlanta Braves",
+        "awayTeam": "Washington Nationals",
+        "home_periods": [
+          {
+            "idx": 0,
+            "period": 1,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 1,
+            "period": 2,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 2,
+            "period": 3,
+            "value": 1,
+            "displayValue": "1",
+            "shortName": null
+          },
+          {
+            "idx": 3,
+            "period": 4,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 4,
+            "period": 5,
+            "value": 3,
+            "displayValue": "3",
+            "shortName": null
+          },
+          {
+            "idx": 5,
+            "period": 6,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 6,
+            "period": 7,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 7,
+            "period": 8,
+            "value": 1,
+            "displayValue": "1",
+            "shortName": null
+          }
+        ],
+        "away_periods": [
+          {
+            "idx": 0,
+            "period": 1,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 1,
+            "period": 2,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 2,
+            "period": 3,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 3,
+            "period": 4,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 4,
+            "period": 5,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 5,
+            "period": 6,
+            "value": 1,
+            "displayValue": "1",
+            "shortName": null
+          },
+          {
+            "idx": 6,
+            "period": 7,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          },
+          {
+            "idx": 7,
+            "period": 8,
+            "value": 1,
+            "displayValue": "1",
+            "shortName": null
+          },
+          {
+            "idx": 8,
+            "period": 9,
+            "value": 0,
+            "displayValue": "0",
+            "shortName": null
+          }
+        ],
+        "periodCount_home": 8,
+        "halfTotals": null
+      },
+      "summary_boxscore_team_periods": [
+        {
+          "bucketIndex": 0,
+          "homeAway": "away",
+          "displayName": "Washington Nationals",
+          "periods": []
+        },
+        {
+          "bucketIndex": 1,
+          "homeAway": "home",
+          "displayName": "Atlanta Braves",
+          "periods": []
+        }
+      ],
+      "resolvedEventId": "401695561",
+      "dateFallback": "20250515"
+    }
+  },
+  "mockConstants": {
+    "soccer_eng1_scoreboard_url": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard/740902",
+    "soccer_eng1_summary_url": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/summary?event=740902",
+    "selectors_scoreboard_bundle": {
+      "homeScore": "competitions[0].competitors[0].score",
+      "awayScore": "competitions[0].competitors[1].score",
+      "status": "competitions[0].status.type.name",
+      "homeTeam": "competitions[0].competitors[0].team.displayName",
+      "awayTeam": "competitions[0].competitors[1].team.displayName",
+      "htHomeBoxscoreTeams": "boxscore.teams[0].linescores[0].value",
+      "htAwayBoxscoreTeams": "boxscore.teams[1].linescores[0].value",
+      "htHome": "boxscore.teams[0].linescores[0].value",
+      "htAway": "boxscore.teams[1].linescores[0].value",
+      "htHome_header_1stHalf_display": "header.competitions[0].competitors[0].linescores[0].displayValue",
+      "htAway_header_1stHalf_display": "header.competitions[0].competitors[1].linescores[0].displayValue",
+      "htHomeAwayHeaderPairs": "alternate: map by homeAway in app; see soccerHalvesFromSummaryHeader"
+    },
+    "soccer_summary_away_yellow_cards_path": "boxscore.teams[1].statistics[1].displayValue",
+    "nba_scoreboard_url": "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard/400878160",
+    "nfl_scoreboard_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard/401671764",
+    "mlb_scoreboard_url": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard/401695561"
+  }
+}

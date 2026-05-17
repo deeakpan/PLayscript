@@ -2,13 +2,26 @@
 
 import { SignIn, Wallet } from "@phosphor-icons/react";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
+import { useEffect, useState } from "react";
 import { useConnection } from "wagmi";
 
 function shortAddress(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
-export function ConnectWallet() {
+const signInClassName =
+  "inline-flex h-9 items-center gap-2 rounded-full border border-[var(--accent)] bg-[var(--surface-elevated)] px-4 text-sm font-semibold text-[var(--foreground)] transition-all duration-200 hover:-translate-y-px hover:border-[var(--dream-yellow)] hover:bg-[var(--surface-hover)] hover:text-[var(--dream-yellow)] hover:shadow-[0_0_20px_-6px_var(--dream-glow)] active:translate-y-0";
+
+function ConnectWalletPlaceholder() {
+  return (
+    <span className={`${signInClassName} pointer-events-none opacity-90`} aria-hidden>
+      <SignIn className="h-4 w-4 text-[var(--accent)]" weight="regular" />
+      Sign in
+    </span>
+  );
+}
+
+function ConnectWalletInner() {
   const { open } = useWeb3Modal();
   const { address, status } = useConnection();
   const connected = status === "connected";
@@ -18,13 +31,13 @@ export function ConnectWallet() {
       <button
         type="button"
         onClick={() => open({ view: "Account" })}
-        className="group inline-flex h-9 items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-sm font-medium text-[var(--foreground)] transition-all duration-200 hover:border-[var(--dream-yellow)]/50 hover:bg-[var(--surface-hover)] hover:shadow-[0_0_0_1px_var(--dream-glow)]"
+        className="group inline-flex h-9 items-center gap-2 rounded-full border border-[var(--accent)] bg-[var(--surface-elevated)] px-4 text-sm font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] hover:shadow-[0_0_16px_-4px_var(--accent-glow)]"
       >
         <Wallet
-          className="h-4 w-4 text-[var(--muted)] transition-colors group-hover:text-[var(--dream-yellow)]"
+          className="h-4 w-4 text-[var(--accent)] transition-colors group-hover:text-[var(--accent)]"
           weight="regular"
         />
-        <span className="transition-colors group-hover:text-[var(--dream-yellow)]">
+        <span className="transition-colors group-hover:text-[var(--foreground)]">
           {shortAddress(address)}
         </span>
       </button>
@@ -32,13 +45,17 @@ export function ConnectWallet() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => open()}
-      className="inline-flex h-9 items-center gap-2 rounded-full border border-[var(--accent)] bg-[var(--surface-elevated)] px-4 text-sm font-semibold text-[var(--foreground)] transition-all duration-200 hover:-translate-y-px hover:border-[var(--dream-yellow)] hover:bg-[var(--surface-hover)] hover:text-[var(--dream-yellow)] hover:shadow-[0_0_20px_-6px_var(--dream-glow)] active:translate-y-0"
-    >
+    <button type="button" onClick={() => open()} className={signInClassName}>
       <SignIn className="h-4 w-4 text-[var(--accent)]" weight="regular" />
       Sign in
     </button>
   );
+}
+
+export function ConnectWallet() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return <ConnectWalletPlaceholder />;
+  return <ConnectWalletInner />;
 }

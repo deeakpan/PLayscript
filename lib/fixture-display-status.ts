@@ -1,4 +1,14 @@
-import type { MatchStatus, ScriptSportKey } from "@/lib/fixtures-shared";
+import type { FixtureRow, MatchStatus, ScriptSportKey } from "@/lib/fixtures-shared";
+
+/** Home fixtures table filter (client-side). */
+export type FixtureListFilter = "all" | "scheduled" | "started" | "finished";
+
+export const FIXTURE_LIST_FILTER_OPTIONS: { id: FixtureListFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "scheduled", label: "Scheduled" },
+  { id: "started", label: "Started" },
+  { id: "finished", label: "Finished" },
+];
 
 /** Extra time after typical match length before we assume the fixture has ended if the API still says “open”. */
 export const POST_MATCH_BUFFER_MS = 20 * 60 * 1000;
@@ -49,4 +59,25 @@ export function deriveDisplayMatchStatus(
   if (nowMs < kickoffMs + windowMs) return "live";
 
   return "finished";
+}
+
+export function fixtureMatchesListFilter(
+  fixture: FixtureRow,
+  filter: FixtureListFilter,
+  nowMs: number,
+): boolean {
+  if (filter === "all") return true;
+  const kickoffMs = new Date(fixture.kickoffUtc).getTime();
+  const display = deriveDisplayMatchStatus(
+    fixture.status,
+    kickoffMs,
+    nowMs,
+    fixture.sportKey,
+  );
+  if (filter === "scheduled") {
+    return display === "open" || display === "closing_soon";
+  }
+  if (filter === "started") return display === "live";
+  if (filter === "finished") return display === "finished";
+  return true;
 }

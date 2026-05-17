@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "network": "somnia",
+  "graphNetwork": "somnia-testnet",
+  "chainId": 50312,
+  "deployedAt": "2026-05-17T18:30:47.414Z",
+  "deployer": "0x68ac96ce64d62386b1a5e2dff8f0f01feed46e09",
+  "playToken": "0xEFA95569C06B8D77fC80092cf5BAa7f766728b83",
+  "nativeHostDeployWei": "40000000000000000000",
+  "nativeKernelFundWei": "50000000000000000000",
+  "kernelFundTxBlock": "384964184",
+  "kernelSettlement": {
+    "abi": "espn-v2",
+    "fetchCounts": {
+      "soccer": 8,
+      "basketball": 6,
+      "americanFootball": 6,
+      "mlb": 2
+    }
+  },
+  "contracts": {
+    "PlayscriptKernel": {
+      "address": "0xc61b75b5628f6651bdd9ce8c902b4f610ee0ed31",
+      "deploymentBlock": "384964138"
+    },
+    "PlayVault": {
+      "address": "0x7f9a2c5848372a4423f2b67bef1d85770f69334b",
+      "deploymentBlock": "384964207"
+    },
+    "PlayscriptReactivityHost": {
+      "address": "0xf36c8b01d37a6c907e72ef7c61b8e608f07a4359",
+      "deploymentBlock": "384964289"
+    },
+    "PlayscriptV2Positions": {
+      "address": "0x8af60cd84d6170b55104d26ffb2cc3c24a92da9f",
+      "deploymentBlock": "385107468"
+    },
+    "PlayscriptV2LockRegistry": {
+      "address": "0x8755c93c763936de237fb10ed4c89019e5087981",
+      "deploymentBlock": "385107494"
+    }
+  },
+  "previousPlayscriptV2Positions": "0xbdc9538901230306ee162c825f9ca1b5ad0f3ccb"
+}

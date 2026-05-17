@@ -26,14 +26,15 @@ export type UserScriptListRow = {
   awayTeam: string;
 };
 
-export function usePlayscriptUserScripts() {
+export function usePlayscriptUserScripts(options?: { enabled?: boolean }) {
   const { address, status } = useConnection();
   const connected = status === "connected";
   const env = useMemo(() => getPlayscriptClientEnv(), []);
+  const enabled = (options?.enabled ?? true) && env.ok && connected && !!address;
 
   return useQuery({
     queryKey: ["playscript-user-scripts", env.ok ? env.playscriptCore : null, address],
-    enabled: env.ok && connected && !!address,
+    enabled,
     queryFn: async (): Promise<UserScriptListRow[]> => {
       const r = await fetch(
         `/api/playscript/user-scripts?address=${encodeURIComponent(address!)}`,

@@ -2,7 +2,7 @@
 
 import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { WagmiProvider } from "wagmi";
 
 import { somniaTestnet } from "@/lib/chains/somnia";
@@ -29,9 +29,14 @@ const wagmiConfig = defaultWagmiConfig({
     email: false,
     socials: [],
   },
+  ssr: true,
 });
 
-if (typeof window !== "undefined") {
+let web3ModalCreated = false;
+
+function ensureWeb3Modal() {
+  if (web3ModalCreated) return;
+  web3ModalCreated = true;
   if (!projectId) {
     console.warn(
       "[Playscript] Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID in .env for WalletConnect (get a free key at https://cloud.reown.com)",
@@ -51,10 +56,19 @@ if (typeof window !== "undefined") {
 
 export function Web3Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
+  const [childrenReady, setChildrenReady] = useState(false);
+
+  useEffect(() => {
+    ensureWeb3Modal();
+    const id = requestAnimationFrame(() => setChildrenReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <WagmiProvider config={wagmiConfig} reconnectOnMount>
+      <QueryClientProvider client={queryClient}>
+        {childrenReady ? children : null}
+      </QueryClientProvider>
     </WagmiProvider>
   );
 }

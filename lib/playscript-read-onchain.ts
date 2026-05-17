@@ -3,6 +3,12 @@ import { createPublicClient, http } from "viem";
 import { somniaTestnet } from "@/lib/chains/somnia";
 import { extractMatchUrlFromRead, normalizeMatchUrl } from "@/lib/playscript-match-url";
 import { playTokenReadAbi, playscriptCoreReadAbi } from "@/lib/playscript-onchain-abi";
+import {
+  extractKernelMatchUrl,
+  kernelMatchRowExists,
+  readKernelMatch,
+} from "@/lib/playscript-v2-kernel-read";
+import { playscriptKernelReadAbi } from "@/lib/playscript-v2-kernel-abi";
 import { getServerSomniaRpcUrl } from "@/lib/somnia-server-rpc";
 
 export function createSomniaPublicClient() {
@@ -33,6 +39,32 @@ export async function resolvePlayscriptMatchIdByUrl(
       args: [i],
     });
     const url = extractMatchUrlFromRead(row);
+    if (url && normalizeMatchUrl(url) === target) return i;
+  }
+  return null;
+}
+
+export async function resolvePlayscriptV2MatchIdByUrl(
+  kernelAddress: `0x${string}`,
+  candidateUrl: string,
+): Promise<bigint | null> {
+  const client = createSomniaPublicClient();
+  const target = normalizeMatchUrl(candidateUrl);
+  const next = await client.readContract({
+    address: kernelAddress,
+    abi: playscriptKernelReadAbi,
+    functionName: "nextMatchId",
+  });
+  const n = BigInt(next);
+  for (let i = BigInt(0); i < n; i += BigInt(1)) {
+    let row;
+    try {
+      row = await readKernelMatch(client, kernelAddress, i);
+    } catch {
+      continue;
+    }
+    if (!kernelMatchRowExists(row)) continue;
+    const url = extractKernelMatchUrl(row);
     if (url && normalizeMatchUrl(url) === target) return i;
   }
   return null;
