@@ -1,0 +1,12 @@
+{
+  "somnia-testnet": {
+    "PlayscriptKernel": {
+      "address": "0xc61b75b5628f6651bdd9ce8c902b4f610ee0ed31",
+      "startBlock": 384964138
+    },
+    "PlayscriptV2Positions": {
+      "address": "0xe85b1e09a544e37902495e0379e8dced5bff8d34",
+      "startBlock": 384964329
+    }
+  }
+}

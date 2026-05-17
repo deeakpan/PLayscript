@@ -1,0 +1,67 @@
+"""Wallet that has locked, claimed, or unwound v2 scripts."""
+type User @entity(immutable: true) {
+  id: ID!
+  locks: [ScriptLock!]! @derivedFrom(field: "user")
+  claims: [ScriptClaim!]! @derivedFrom(field: "user")
+  unwinds: [ScriptUnwind!]! @derivedFrom(field: "user")
+}
+
+"""Kernel match metadata (from `MatchRegistered` + settlement)."""
+type Match @entity(immutable: false) {
+  id: ID!
+  matchId: BigInt!
+  sport: Int!
+  kickoff: BigInt!
+  finalizeDelaySec: Int!
+  finalizeAfterSec: BigInt!
+  url: String!
+  settled: Boolean!
+  finalHome: BigInt
+  finalAway: BigInt
+  resolvedLegsBitmask: BigInt
+  registeredAt: BigInt!
+  registeredBlock: BigInt!
+  locks: [ScriptLock!]! @derivedFrom(field: "match")
+}
+
+"""One `lockScript` fill — `ScriptLocked` on `PlayscriptV2Positions`."""
+type ScriptLock @entity(immutable: true) {
+  id: ID!
+  user: User!
+  match: Match!
+  matchId: BigInt!
+  legMask12: Int!
+  tokenId: BigInt!
+  actualStake: BigInt!
+  netStake: BigInt!
+  payoutRate: BigInt!
+  liability: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+"""Winning payout — `ScriptClaimed` + `ScriptPaid` (same tx)."""
+type ScriptClaim @entity(immutable: false) {
+  id: ID!
+  user: User!
+  match: Match!
+  matchId: BigInt!
+  legMask12: Int!
+  netStakeBurned: BigInt!
+  payout: BigInt
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+"""OPEN unwind — ERC-1155 burn (`TransferSingle` to zero address)."""
+type ScriptUnwind @entity(immutable: true) {
+  id: ID!
+  user: User!
+  tokenId: BigInt!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}

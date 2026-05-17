@@ -1,0 +1,39 @@
+[
+  {
+    "anonymous": false,
+    "type": "event",
+    "name": "ScriptLocked",
+    "inputs": [
+      { "name": "matchId", "type": "uint256", "indexed": true },
+      { "name": "legMask12", "type": "uint16", "indexed": false },
+      { "name": "user", "type": "address", "indexed": true },
+      { "name": "actualStake", "type": "uint256", "indexed": false },
+      { "name": "netStake", "type": "uint256", "indexed": false },
+      { "name": "payoutRate", "type": "uint256", "indexed": false },
+      { "name": "liability", "type": "uint256", "indexed": false }
+    ]
+  },
+  {
+    "anonymous": false,
+    "type": "event",
+    "name": "ScriptClaimed",
+    "inputs": [
+      { "name": "matchId", "type": "uint256", "indexed": true },
+      { "name": "legMask12", "type": "uint16", "indexed": false },
+      { "name": "user", "type": "address", "indexed": true },
+      { "name": "netStakeBurned", "type": "uint256", "indexed": false }
+    ]
+  },
+  {
+    "anonymous": false,
+    "type": "event",
+    "name": "TransferSingle",
+    "inputs": [
+      { "name": "operator", "type": "address", "indexed": true },
+      { "name": "from", "type": "address", "indexed": true },
+      { "name": "to", "type": "address", "indexed": true },
+      { "name": "id", "type": "uint256", "indexed": false },
+      { "name": "value", "type": "uint256", "indexed": false }
+    ]
+  }
+]

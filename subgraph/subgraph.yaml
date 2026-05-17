@@ -1,0 +1,59 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: PlayscriptKernel
+    network: somnia-testnet
+    source:
+      address: "0xc61b75b5628f6651bdd9ce8c902b4f610ee0ed31"
+      abi: PlayscriptKernel
+      startBlock: 384964138
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Match
+        - ScriptClaim
+        - User
+      abis:
+        - name: PlayscriptKernel
+          file: ./abis/PlayscriptKernel.json
+      eventHandlers:
+        - event: MatchRegistered(indexed uint256,uint8,uint64,uint32,uint64,string)
+          handler: handleMatchRegistered
+        - event: MatchSettled(indexed uint256,uint256,uint256,uint16)
+          handler: handleMatchSettled
+        - event: ScriptPaid(indexed uint256,uint16,indexed address,uint256)
+          handler: handleScriptPaid
+      file: ./src/kernel.ts
+  - kind: ethereum
+    name: PlayscriptV2Positions
+    network: somnia-testnet
+    source:
+      address: "0xe85b1e09a544e37902495e0379e8dced5bff8d34"
+      abi: PlayscriptV2Positions
+      startBlock: 384964329
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - ScriptLock
+        - ScriptClaim
+        - ScriptUnwind
+        - User
+      abis:
+        - name: PlayscriptV2Positions
+          file: ./abis/PlayscriptV2Positions.json
+      eventHandlers:
+        - event: ScriptLocked(indexed uint256,uint16,indexed address,uint256,uint256,uint256,uint256)
+          handler: handleScriptLocked
+        - event: ScriptClaimed(indexed uint256,uint16,indexed address,uint256)
+          handler: handleScriptClaimed
+        - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTransferSingle
+      file: ./src/positions.ts

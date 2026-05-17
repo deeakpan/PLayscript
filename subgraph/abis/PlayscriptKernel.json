@@ -1,0 +1,37 @@
+[
+  {
+    "anonymous": false,
+    "type": "event",
+    "name": "MatchRegistered",
+    "inputs": [
+      { "name": "matchId", "type": "uint256", "indexed": true },
+      { "name": "sport", "type": "uint8", "indexed": false },
+      { "name": "kickoff", "type": "uint64", "indexed": false },
+      { "name": "finalizeDelaySec", "type": "uint32", "indexed": false },
+      { "name": "finalizeAfterSec", "type": "uint64", "indexed": false },
+      { "name": "url", "type": "string", "indexed": false }
+    ]
+  },
+  {
+    "anonymous": false,
+    "type": "event",
+    "name": "MatchSettled",
+    "inputs": [
+      { "name": "matchId", "type": "uint256", "indexed": true },
+      { "name": "finalHome", "type": "uint256", "indexed": false },
+      { "name": "finalAway", "type": "uint256", "indexed": false },
+      { "name": "resolvedLegsBitmask", "type": "uint16", "indexed": false }
+    ]
+  },
+  {
+    "anonymous": false,
+    "type": "event",
+    "name": "ScriptPaid",
+    "inputs": [
+      { "name": "matchId", "type": "uint256", "indexed": true },
+      { "name": "legMask12", "type": "uint16", "indexed": false },
+      { "name": "to", "type": "address", "indexed": true },
+      { "name": "payout", "type": "uint256", "indexed": false }
+    ]
+  }
+]
