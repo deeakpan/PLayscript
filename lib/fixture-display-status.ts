@@ -14,21 +14,28 @@ export const FIXTURE_LIST_FILTER_OPTIONS: { id: FixtureListFilter; label: string
 export const POST_MATCH_BUFFER_MS = 20 * 60 * 1000;
 
 /**
- * Rough televised length from kickoff (used only for UI when TheSportsDB lags on `strStatus`).
- * Football (soccer): 120m as requested; other sports get plausible defaults + buffer below.
+ * Rough televised length from kickoff (UI status inference + v2 `finalizeDelaySec` for non-soccer).
+ * Football (soccer): 120m; longer codes get proportionally longer defaults.
  */
+export function typicalMatchDurationMinutes(sportKey: ScriptSportKey): number {
+  switch (sportKey) {
+    case "soccer":
+      return 120;
+    case "basketball":
+      return 150;
+    case "american_football":
+      return 210;
+    case "baseball":
+      return 240;
+    default: {
+      const _x: never = sportKey;
+      return _x;
+    }
+  }
+}
+
 export function typicalMatchDurationMs(sportKey: ScriptSportKey): number {
-  const minutes =
-    sportKey === "soccer"
-      ? 120
-      : sportKey === "basketball"
-        ? 150
-        : sportKey === "american_football"
-          ? 210
-          : sportKey === "baseball"
-            ? 240
-            : 120;
-  return minutes * 60 * 1000;
+  return typicalMatchDurationMinutes(sportKey) * 60 * 1000;
 }
 
 /** Typical length + 20m buffer — same window for “Live vs Scheduled” and “Ended” in lists. */

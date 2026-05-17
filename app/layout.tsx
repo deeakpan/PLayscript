@@ -32,12 +32,16 @@ const metadataBase: URL | undefined =
 
 export const metadata: Metadata = {
   ...(metadataBase ? { metadataBase } : {}),
-  title: "Playscript",
+  title: {
+    default: "Playscript | Agentic Sports Prediction Markets",
+    template: "%s | Playscript",
+  },
   description:
-    "Decentralized sports scenario markets settled with onchain agents.",
+    "Agentic sports prediction markets — decentralized scenario plays settled with onchain agents.",
   icons: {
-    icon: [{ url: "/logo.png?v=3", type: "image/png", sizes: "32x32" }],
-    apple: [{ url: "/logo.png?v=3", sizes: "180x180", type: "image/png" }],
+    icon: [{ url: "/playscript_logo.png", type: "image/png" }],
+    apple: [{ url: "/playscript_logo.png", type: "image/png" }],
+    shortcut: "/playscript_logo.png",
   },
 };
 

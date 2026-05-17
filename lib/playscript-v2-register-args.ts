@@ -1,4 +1,5 @@
 import type { ScriptSportKey } from "./fixtures-shared";
+import { typicalMatchDurationMinutes } from "./fixture-display-status";
 import { espnPrimaryMatchUrl, espnScoreboardUrl, espnSummaryUrl } from "./espn-url";
 import {
   ESPN_SCOREBOARD_SELECTORS,
@@ -148,8 +149,24 @@ export async function assertEspnSettlementSelectorsResolvable(
 /** @deprecated Use `preflightEspnBeforeRegister` or `assertEspnSettlementSelectorsResolvable`. */
 export const assertEspnSelectorsResolvable = assertEspnSettlementSelectorsResolvable;
 
-export function defaultV2FinalizeDelaySec(_sportKey: ScriptSportKey): number {
-  return 10_800;
+/** Extra time after typical full-time before the kernel may call `startSettle`. */
+const V2_FINALIZE_POST_MATCH_BUFFER_SEC = 2 * 60 * 60;
+
+/** Seconds after kickoff stored on `registerMatch` (`finalizeDelaySec`). */
+export function defaultV2FinalizeDelaySec(sportKey: ScriptSportKey): number {
+  if (sportKey === "soccer") {
+    return 3 * 60 * 60;
+  }
+  return typicalMatchDurationMinutes(sportKey) * 60 + V2_FINALIZE_POST_MATCH_BUFFER_SEC;
+}
+
+/** Human label for UI copy (e.g. fixture register hint). */
+export function formatV2FinalizeDelayLabel(sportKey: ScriptSportKey): string {
+  const sec = defaultV2FinalizeDelaySec(sportKey);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 export function v2KernelSportEnum(sportKey: ScriptSportKey): number {

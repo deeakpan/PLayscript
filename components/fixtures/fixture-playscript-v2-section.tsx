@@ -29,6 +29,7 @@ import {
 import {
   buildV2EspnRegisterUrls,
   defaultV2FinalizeDelaySec,
+  formatV2FinalizeDelayLabel,
   kickoffUnixFromIsoUtc,
   v2DefaultLegKinds,
   v2DefaultLegWeights,
@@ -762,6 +763,9 @@ export function FixturePlayscriptV2Section({
           >
             {busy ? "Confirm in wallet…" : registerMatchButtonLabel(sportKey)}
           </button>
+          <p className="mt-2 text-center text-[10px] leading-relaxed text-[var(--muted)]">
+            Onchain settlement may begin {formatV2FinalizeDelayLabel(sportKey)} after kickoff.
+          </p>
           {err ? (
             <p className="mt-2 text-center text-[11px] leading-snug text-rose-300/90">{err}</p>
           ) : null}
