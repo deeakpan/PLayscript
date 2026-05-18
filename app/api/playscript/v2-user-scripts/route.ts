@@ -112,12 +112,14 @@ async function buildScriptsFromRegistry(owner: `0x${string}`, decimals: number):
     const teams = await resolveTeams(match.url);
     const sportKey = sportIndexToKey(match.sport);
     const fixtureSeed = teams.eventId ?? matchIdStr;
+    const registeredLegKinds = match.legKinds.length === 15 ? match.legKinds : undefined;
     const pickDescriptions = describeV2LegMaskPicks(
       fixtureSeed,
       teams.homeTeam,
       teams.awayTeam,
       sportKey,
       lock.legMask12,
+      registeredLegKinds,
     ).map((p) => ({ legId: p.legId, description: p.description, difficulty: p.difficulty }));
 
     const payoutFormatted =
@@ -173,12 +175,24 @@ async function buildScriptsFromSubgraph(owner: `0x${string}`, decimals: number):
     const teams = await resolveTeams(lock.match.url);
     const sportKey = sportIndexToKey(lock.match.sport);
     const fixtureSeed = teams.eventId ?? lock.matchId;
+    const client = createSomniaPublicClient();
+    const kernelEnv = getPlayscriptV2KernelEnv();
+    let registeredLegKinds: readonly number[] | undefined;
+    if (kernelEnv.ok) {
+      try {
+        const match = await readKernelMatch(client, kernelEnv.kernel, BigInt(lock.matchId));
+        registeredLegKinds = match.legKinds.length === 15 ? match.legKinds : undefined;
+      } catch {
+        registeredLegKinds = undefined;
+      }
+    }
     const pickDescriptions = describeV2LegMaskPicks(
       fixtureSeed,
       teams.homeTeam,
       teams.awayTeam,
       sportKey,
       lock.legMask12,
+      registeredLegKinds,
     ).map((p) => ({ legId: p.legId, description: p.description, difficulty: p.difficulty }));
     scripts.push({
       lockId: lock.id,

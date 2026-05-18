@@ -15,9 +15,13 @@ export type ParsedKernelMatch = {
   exists: boolean;
   settled: boolean;
   settleInProgress: boolean;
+  /** `legKinds[i]` grades bitmask bit `i` (same order as at `registerMatch`). */
+  legKinds: readonly number[];
   resolvedLegsBitmask: number;
   finalHome: bigint;
   finalAway: bigint;
+  htHome: bigint;
+  htAway: bigint;
   matchLiability: bigint;
   matchLiabilityCap: bigint;
 };
@@ -53,6 +57,13 @@ function asString(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
 
+function asLegKinds(v: unknown): readonly number[] {
+  if (!Array.isArray(v) || v.length !== 15) {
+    throw new Error(`Expected uint8[15] legKinds, got ${String(v)}`);
+  }
+  return v.map((k) => asUint8(k));
+}
+
 function parseLegacyMatchRow(row: unknown): ParsedKernelMatch {
   if (row && typeof row === "object" && !Array.isArray(row)) {
     const o = row as Record<string, unknown>;
@@ -66,9 +77,12 @@ function parseLegacyMatchRow(row: unknown): ParsedKernelMatch {
       exists: asBool(o.exists),
       settled: asBool(o.settled),
       settleInProgress: asBool(o.settleInProgress),
+      legKinds: asLegKinds(o.legKinds ?? []),
       resolvedLegsBitmask: asUint16(o.resolvedLegsBitmask),
       finalHome: asBigInt(o.finalHome),
       finalAway: asBigInt(o.finalAway),
+      htHome: asBigInt(o.htHome ?? 0),
+      htAway: asBigInt(o.htAway ?? 0),
       matchLiability: BigInt(0),
       matchLiabilityCap: BigInt(0),
     };
@@ -84,9 +98,12 @@ function parseLegacyMatchRow(row: unknown): ParsedKernelMatch {
     exists: asBool(row[7]),
     settled: asBool(row[8]),
     settleInProgress: asBool(row[9]),
+    legKinds: [],
     resolvedLegsBitmask: asUint16(row[13]),
     finalHome: asBigInt(row[11]),
     finalAway: asBigInt(row[12]),
+    htHome: BigInt(0),
+    htAway: BigInt(0),
     matchLiability: BigInt(0),
     matchLiabilityCap: BigInt(0),
   };
@@ -105,9 +122,12 @@ function parseEspnV2MatchRow(row: unknown): ParsedKernelMatch {
       exists: asBool(o.exists),
       settled: asBool(o.settled),
       settleInProgress: asBool(o.settleInProgress),
+      legKinds: asLegKinds(o.legKinds),
       resolvedLegsBitmask: asUint16(o.resolvedLegsBitmask),
       finalHome: asBigInt(o.finalHome),
       finalAway: asBigInt(o.finalAway),
+      htHome: asBigInt(o.htHome),
+      htAway: asBigInt(o.htAway),
       matchLiability: asBigInt(o.matchLiability),
       matchLiabilityCap: asBigInt(o.matchLiabilityCap),
     };

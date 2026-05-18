@@ -38,8 +38,8 @@ async function main() {
       ? (getAddress(toRaw) as `0x${string}`)
       : (getAddress(deployer) as `0x${string}`);
 
-  const hostAmount = parseEther(process.env.PLAYSCRIPT_V2_WDR_HOST_STT?.trim() || "36");
-  const kernelAmount = parseEther(process.env.PLAYSCRIPT_V2_WDR_KERNEL_STT?.trim() || "39.5");
+  const hostAmount = parseEther(process.env.PLAYSCRIPT_V2_WDR_HOST_STT?.trim() || "39");
+  const kernelAmount = parseEther(process.env.PLAYSCRIPT_V2_WDR_KERNEL_STT?.trim() || "39");
 
   const hostAddr = getV2DeploymentContract("PlayscriptReactivityHost");
   const kernelAddr = getV2DeploymentContract("PlayscriptKernel");

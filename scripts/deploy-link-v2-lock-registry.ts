@@ -1,10 +1,11 @@
 // @ts-nocheck
 /**
- * Deploy PlayscriptV2LockRegistry + new PlayscriptV2Positions (with registry hook),
- * link registry, and point kernel + vault at the new positions contract.
+ * Partial redeploy: new positions + lock registry on an **existing** kernel/vault/play token.
+ * Does **not** pick up `PlayscriptV2Grading` changes — use full deploy for that:
  *
- * Existing locks on the old positions ERC-1155 remain on the old contract; new locks
- * are indexed in the registry.
+ *   npm run deploy:playscript-v2:somnia
+ *
+ * Use this only when the kernel is already correct and you only need fresh positions/registry:
  *
  *   npm run deploy:link-v2-lock-registry:somnia
  */

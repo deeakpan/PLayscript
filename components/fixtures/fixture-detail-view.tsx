@@ -7,7 +7,9 @@ import { FixtureClaimPayoutModal } from "@/components/fixtures/fixture-claim-pay
 import { FixtureKickoffEta } from "@/components/fixtures/fixture-kickoff-eta";
 import { FixturePlayscriptSection } from "@/components/fixtures/fixture-playscript-section";
 import { FixturePlayscriptV2Section } from "@/components/fixtures/fixture-playscript-v2-section";
+import { FixtureV2LockedScript } from "@/components/fixtures/fixture-v2-locked-script";
 import { PlayscriptV2LegBuilder } from "@/components/fixtures/playscript-v2-leg-builder";
+import { usePlayscriptV2FixtureScript } from "@/hooks/use-playscript-v2-fixture-script";
 import { usePlayscriptV2MatchByUrl } from "@/hooks/use-playscript-v2-match-by-url";
 import { deriveDisplayMatchStatus } from "@/lib/fixture-display-status";
 import type { FixtureRow, MatchStatus } from "@/lib/fixtures-shared";
@@ -98,6 +100,17 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
   const matchByUrl = usePlayscriptMatchByUrl(lookupeventUrl);
   const v2MatchQ = usePlayscriptV2MatchByUrl(lookupeventUrl);
   const v2MatchRegistered = v2MatchQ.data?.matchId != null;
+  const v2MatchId = v2MatchQ.data?.matchId ?? null;
+  const playDecimals = 18;
+  const v2ScriptQ = usePlayscriptV2FixtureScript({
+    matchId: v2MatchId,
+    fixtureId: fixture.id,
+    homeTeam: home,
+    awayTeam: away,
+    sportKey: fixture.sportKey,
+    decimals: playDecimals,
+  });
+  const hasV2Script = v2ScriptQ.data?.hasScript === true;
   const resolvedMatchId =
     matchByUrl.data?.matchId !== null && matchByUrl.data?.matchId !== undefined
       ? Number(matchByUrl.data.matchId)
@@ -297,7 +310,15 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
         </section>
       ) : null}
 
-      {v2MatchRegistered ? (
+      {hasV2Script && v2MatchId !== null && v2ScriptQ.data?.hasScript ? (
+        <FixtureV2LockedScript
+          script={v2ScriptQ.data}
+          matchId={v2MatchId}
+          displayStatus={displayStatus}
+        />
+      ) : null}
+
+      {v2MatchRegistered && !hasV2Script ? (
         <PlayscriptV2LegBuilder
           fixtureId={fixture.id}
           homeTeam={home}
@@ -317,7 +338,8 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
         sportKey={fixture.sportKey}
         kickoffUtc={fixture.kickoffUtc}
         canRegister={canEditScripts}
-        legMask12={v2LegMask}
+        legMask12={hasV2Script && v2ScriptQ.data?.hasScript ? v2ScriptQ.data.legMask12 : v2LegMask}
+        hideLockForm={hasV2Script}
       />
 
       <FixturePlayscriptSection

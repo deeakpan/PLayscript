@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-/// @notice Helpers for 12-leg picks (bits 0–11). Users lock exactly 5 bits set.
+/// @notice Helpers for v2 market leg picks (15 slots, bits 0–14). Users lock exactly 5 bits set.
 library LegBitmask {
-    /// @dev Count set bits in the low 12 bits of `mask`.
-    function popCount12(uint16 mask) internal pure returns (uint256 c) {
+    uint8 public constant MARKET_BITS = 15;
+
+    /// @dev Count set bits in the low `MARKET_BITS` bits of `mask`.
+    function popCount(uint16 mask) internal pure returns (uint256 c) {
         unchecked {
-            for (uint256 i; i < 12; ++i) {
+            for (uint256 i; i < MARKET_BITS; ++i) {
                 if ((mask >> i) & 1 == 1) ++c;
             }
         }
     }
 
-    /// @dev True iff exactly `bits` bits are set among the low 12 bits.
+    /// @dev True iff exactly `bits` bits are set among the market leg slots.
     function hasExactBits(uint16 mask, uint256 bits) internal pure returns (bool) {
-        return popCount12(mask) == bits;
+        return popCount(mask) == bits;
     }
 }

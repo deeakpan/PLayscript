@@ -40,7 +40,13 @@ import {
   ESPN_SCOREBOARD_SELECTORS,
   ESPN_SOCCER_SUMMARY_SELECTORS,
 } from "@/lib/espn-v2-selectors";
-import { bitmaskPopcount, V2_MASK_MAX, V2_PICK_COUNT } from "@/lib/playscript-v2-legs";
+import {
+  bitmaskPopcount,
+  describeV2LegMaskPicks,
+  V2_MASK_MAX,
+  V2_PICK_COUNT,
+} from "@/lib/playscript-v2-legs";
+import { formatPlayAmount } from "@/lib/format-play-display";
 import { usePlayscriptV2MatchByUrl } from "@/hooks/use-playscript-v2-match-by-url";
 
 type Props = {
@@ -53,8 +59,10 @@ type Props = {
   kickoffUtc: string;
   /** Same window as v1 script builder: pre-kickoff, not live/finished. */
   canRegister: boolean;
-  /** Current 12-bit leg mask from `PlayscriptV2LegBuilder` (exactly five bits set when ready). */
+  /** Current 15-bit leg mask from `PlayscriptV2LegBuilder` (exactly five bits set when ready). */
   legMask12: number;
+  /** When the user already has a locked script, hide stake / Continue (shown in `FixtureV2LockedScript`). */
+  hideLockForm?: boolean;
 };
 
 function parseStakeWei(playStake: string, decimals: number): bigint {
@@ -88,6 +96,7 @@ export function FixturePlayscriptV2Section({
   kickoffUtc,
   canRegister,
   legMask12,
+  hideLockForm = false,
 }: Props) {
   const env = useMemo(() => getPlayscriptV2KernelEnv(), []);
   const positionsEnv = useMemo(() => getPlayscriptV2PositionsEnv(), []);
@@ -113,6 +122,14 @@ export function FixturePlayscriptV2Section({
 
   const legMaskNorm = legMask12 & V2_MASK_MAX;
   const maskReady = bitmaskPopcount(legMaskNorm) === V2_PICK_COUNT;
+
+  const selectionLines = useMemo(
+    () =>
+      describeV2LegMaskPicks(fixtureId, homeTeam, awayTeam, sportKey, legMaskNorm).map(
+        (p) => p.description,
+      ),
+    [fixtureId, homeTeam, awayTeam, sportKey, legMaskNorm],
+  );
 
   const decimalsQ = useQuery({
     queryKey: ["play-token-decimals", positionsEnv.ok ? positionsEnv.playToken : null],
@@ -176,8 +193,6 @@ export function FixturePlayscriptV2Section({
   });
 
   const matchOpen = chainMatchQ.data?.state === 0;
-  const matchLiabilityWei = chainMatchQ.data?.matchLiability ?? null;
-  const matchLiabilityCapWei = chainMatchQ.data?.matchLiabilityCap ?? null;
 
   const lockQuoteQ = useQuery({
     queryKey: [
@@ -316,34 +331,8 @@ export function FixturePlayscriptV2Section({
             registerArgs.selHomeQ2,
             registerArgs.selAwayQ1,
             registerArgs.selAwayQ2,
-            [...registerArgs.legKinds] as [
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-            ],
-            [...registerArgs.legWeights] as [
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-              number,
-            ],
+            [...registerArgs.legKinds],
+            [...registerArgs.legWeights],
           ],
         }),
       });
@@ -441,6 +430,7 @@ export function FixturePlayscriptV2Section({
       await queryClient.invalidateQueries({ queryKey: ["v2-erc1155-position"] });
       await queryClient.invalidateQueries({ queryKey: ["v2-lock-quote"] });
       await queryClient.invalidateQueries({ queryKey: ["v2-kernel-match-row"] });
+      await queryClient.invalidateQueries({ queryKey: ["v2-fixture-script"] });
       await invalidatePlayBalance(queryClient);
       setLockModalOpen(false);
       setOkMsg("Script locked. If you win after settlement, claim PLAY from this ticket.");
@@ -546,192 +536,117 @@ export function FixturePlayscriptV2Section({
   }
 
   if (matchId !== null) {
-    return (
-      <section className="border-t border-[var(--border)] pt-8" aria-label="Onchain match">
-        <p className="max-w-xl text-sm text-[var(--foreground)]">
-          Match <span className="font-mono text-[var(--accent)]">#{matchId.toString()}</span> on the
-          kernel.
-        </p>
+    if (hideLockForm) {
+      return null;
+    }
 
+    return (
+      <section className="border-t border-[var(--border)] pt-8" aria-label="Lock script">
         {positionsEnv.ok ? (
           maskReady ? (
-            <div className="mt-4 max-w-xl space-y-3 rounded-xl border border-[var(--border)]/70 bg-[var(--surface)]/20 p-4">
+            <div className="mt-4 max-w-sm space-y-3 rounded-xl border border-[var(--border)]/70 bg-[var(--surface)]/20 p-4">
               {chainMatchQ.isPending ? (
-                <FixturePlayscriptInlineSpinner label="Loading match state…" />
+                <FixturePlayscriptInlineSpinner label="Loading…" />
               ) : chainMatchQ.isError ? (
-                <p className="text-xs text-rose-300/90">Could not read kernel match ({chainMatchQ.error.message}).</p>
+                <p className="text-xs text-rose-300/90">Could not load match. Try again shortly.</p>
+              ) : !matchOpen ? (
+                <p className="text-sm text-amber-200/90">Staking is closed for this match.</p>
+              ) : !connected ? (
+                <p className="text-sm text-[var(--muted)]">Connect your wallet on Somnia Testnet to stake.</p>
+              ) : wrongChain ? (
+                <p className="text-sm text-rose-300/90">Switch your wallet to Somnia Testnet.</p>
               ) : (
                 <>
-                <p className="text-xs leading-relaxed text-[var(--muted)]">
-                  Kernel state:{" "}
-                  <span className="font-medium text-[var(--foreground)]">
-                    {matchOpen ? "OPEN (lock & unwind allowed)" : "Not OPEN — unwind disabled"}
-                  </span>
-                  {matchLiabilityCapWei !== null && matchLiabilityWei !== null ? (
-                    <>
-                      {" "}
-                      · match liability{" "}
-                      <span className="font-mono text-[var(--foreground)]">
-                        {formatUnits(matchLiabilityWei, decimals)}
-                      </span>
-                      {" / "}
-                      <span className="font-mono text-[var(--foreground)]">
-                        {formatUnits(matchLiabilityCapWei, decimals)}
-                      </span>{" "}
-                      PLAY
-                    </>
-                  ) : null}
-                </p>
-                {positionQ.data ? (
-                  <p className="font-mono text-[11px] text-[var(--muted)]">
-                    tokenId{" "}
-                    <span className="break-all text-[var(--accent)]">{positionQ.data.tokenId.toString()}</span>
-                    <span className="mx-2 text-[var(--border)]">|</span>
-                    your balance{" "}
-                    <span className="text-[var(--foreground)]">{positionQ.data.balance.toString()}</span> wei
-                  </p>
-                ) : null}
-
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                  <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-[var(--muted)]">
-                    <span>Stake (PLAY)</span>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-xs font-medium text-[var(--muted)]">Stake ($PLAY)</span>
                     <input
                       type="text"
                       inputMode="decimal"
                       value={stakePlay}
                       onChange={(e) => setStakePlay(e.target.value)}
-                      disabled={busy || !matchOpen}
-                      className="rounded-lg border border-[var(--border)]/80 bg-[var(--background)]/80 px-3 py-2 font-mono text-sm text-[var(--foreground)] outline-none ring-[var(--accent)]/30 focus-visible:ring-2 disabled:opacity-50"
+                      disabled={busy}
+                      className="rounded-lg border border-[var(--border)]/80 bg-[var(--background)]/80 px-3 py-2.5 text-sm tabular-nums text-[var(--foreground)] outline-none ring-[var(--accent)]/30 focus-visible:ring-2 disabled:opacity-50"
                     />
                     {maxStakeWei !== null && maxStakeWei > BigInt(0) ? (
                       <button
                         type="button"
-                        disabled={busy || !matchOpen}
-                        onClick={() => setStakePlay(formatUnits(maxStakeWei, decimals))}
-                        className="w-fit text-left text-[10px] text-[var(--accent)] underline-offset-2 hover:underline"
+                        disabled={busy}
+                        onClick={() => setStakePlay(formatPlayAmount(maxStakeWei, decimals))}
+                        className="w-fit text-left text-[11px] text-[var(--accent)] underline-offset-2 hover:underline"
                       >
-                        Max for this script (~{formatUnits(maxStakeWei, decimals)} PLAY)
+                        Max · {formatPlayAmount(maxStakeWei, decimals)} PLAY
                       </button>
                     ) : null}
                   </label>
-                  {!connected ? (
-                    <p className="text-xs text-[var(--muted)]">Connect a wallet on Somnia Testnet.</p>
-                  ) : wrongChain ? (
-                    <p className="text-xs text-rose-300/90">Switch to Somnia Testnet.</p>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={
-                        busy ||
-                        !walletClient ||
-                        !publicClient ||
-                        !matchOpen ||
-                        wrongChain ||
-                        !lockQuote ||
-                        lockQuote.noRoom
-                      }
-                      onClick={() => setLockModalOpen(true)}
-                      className="shrink-0 rounded-lg border border-[var(--accent)]/40 bg-[var(--surface-active)] px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors hover:border-[var(--accent)]/55 hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-55"
-                    >
-                      Review & lock
-                    </button>
-                  )}
-                </div>
 
-                {lockQuoteQ.isPending ? (
-                  <p className="text-[10px] text-[var(--muted)]">Loading payout estimate…</p>
-                ) : lockQuote && !lockQuote.noRoom ? (
-                  <div className="rounded-lg border border-[var(--border)]/50 bg-[var(--background)]/40 px-3 py-2.5 text-[11px] leading-relaxed text-[var(--muted)]">
-                    <p className="flex flex-wrap justify-between gap-x-3 gap-y-1">
-                      <span>
-                        Net stake{" "}
-                        <span className="font-mono font-medium text-[var(--foreground)]">
-                          {formatUnits(lockQuote.netStakeWei, decimals)}
-                        </span>{" "}
-                        PLAY
-                      </span>
-                      <span>
-                        Fee 0.5%:{" "}
-                        <span className="font-mono text-[var(--foreground)]">
-                          {formatUnits(lockQuote.lockFeeWei, decimals)}
+                  {lockQuoteQ.isPending ? (
+                    <p className="text-xs text-[var(--muted)]">Updating estimate…</p>
+                  ) : lockQuote?.noRoom ? (
+                    <p className="text-xs text-rose-300/90">This match is full — try a lower stake later.</p>
+                  ) : lockQuote ? (
+                    <div className="space-y-1 text-sm">
+                      <p className="flex justify-between gap-2">
+                        <span className="text-[var(--muted)]">Potential payout (5/5)</span>
+                        <span className="shrink-0 font-semibold tabular-nums text-emerald-300/95">
+                          {formatPlayAmount(lockQuote.payoutIfWinWei, decimals)} PLAY
                         </span>
-                      </span>
-                    </p>
-                    <p className="mt-1 flex flex-wrap justify-between gap-x-3 gap-y-1">
-                      <span>
-                        Est. payout if 5/5:{" "}
-                        <span className="font-mono font-medium text-emerald-300/95">
-                          {formatUnits(lockQuote.payoutIfWinWei, decimals)}
-                        </span>{" "}
-                        PLAY
-                      </span>
+                      </p>
                       {lockQuoteQ.data ? (
-                        <span>
-                          Multiplier{" "}
-                          <span className="text-[var(--accent)]">
+                        <p className="flex justify-between gap-2">
+                          <span className="text-[var(--muted)]">Multiplier</span>
+                          <span className="shrink-0 font-semibold text-[var(--accent)]">
                             {payoutMultiplierLabel(lockQuoteQ.data.rate)}
                           </span>
-                        </span>
+                        </p>
                       ) : null}
-                    </p>
-                    {lockQuote.partialFill ? (
-                      <p className="mt-1 text-amber-200/90">
-                        Partial fill — only {formatUnits(lockQuote.actualStakeWei, decimals)} PLAY locks;{" "}
-                        {formatUnits(lockQuote.refundWei, decimals)} refunded.
-                      </p>
-                    ) : null}
-                  </div>
-                ) : lockQuote?.noRoom ? (
-                  <p className="text-[10px] text-rose-300/90">No liability room left for new locks on this match.</p>
-                ) : null}
+                    </div>
+                  ) : null}
 
-                <FixtureLockScriptModal
-                  open={lockModalOpen}
-                  onClose={() => {
-                    if (!busy) setLockModalOpen(false);
-                  }}
-                  onConfirm={() => void onLockV2()}
-                  busy={busy}
-                  decimals={decimals}
-                  matchId={matchId.toString()}
-                  stakeInput={stakePlay}
-                  onStakeInputChange={setStakePlay}
-                  quote={lockQuote}
-                  matchLiabilityWei={matchLiabilityWei}
-                  matchLiabilityCapWei={matchLiabilityCapWei}
-                  difficultyScore={lockQuoteQ.data?.score ?? null}
-                />
-
-                {positionQ.data && positionQ.data.balance > BigInt(0) && matchOpen ? (
                   <button
                     type="button"
-                    disabled={busy || !walletClient || !publicClient || wrongChain}
-                    onClick={() => void onUnwindMax()}
-                    className="w-full rounded-lg border border-[var(--border)]/80 bg-[var(--surface)]/40 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:border-rose-400/35 hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-55"
+                    disabled={busy || !walletClient || !publicClient || !lockQuote || lockQuote.noRoom}
+                    onClick={() => setLockModalOpen(true)}
+                    className="w-full rounded-lg border border-[var(--accent)]/40 bg-[var(--surface-active)] py-2.5 text-sm font-semibold text-[var(--foreground)] transition-colors hover:border-[var(--accent)]/55 hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-55"
                   >
-                    Unwind full balance (burn ticket, get PLAY back)
+                    Continue
                   </button>
-                ) : null}
 
-                {matchOpen ? (
-                  <p className="text-[10px] leading-relaxed text-[var(--muted)]">
-                    Lock is allowed whenever the kernel match is OPEN (not only during the fixture edit
-                    window). Unwind returns PLAY while the match stays OPEN.
-                  </p>
-                ) : null}
+                  <FixtureLockScriptModal
+                    open={lockModalOpen}
+                    onClose={() => {
+                      if (!busy) setLockModalOpen(false);
+                    }}
+                    onConfirm={() => void onLockV2()}
+                    busy={busy}
+                    decimals={decimals}
+                    quote={lockQuote}
+                    selections={selectionLines}
+                    kickoffUtc={kickoffUtc}
+                  />
+
+                  {positionQ.data && positionQ.data.balance > BigInt(0) ? (
+                    <button
+                      type="button"
+                      disabled={busy || !walletClient || !publicClient || wrongChain}
+                      onClick={() => void onUnwindMax()}
+                      className="w-full py-1.5 text-xs font-medium text-[var(--muted)] underline-offset-2 hover:text-[var(--foreground)] hover:underline disabled:opacity-50"
+                    >
+                      Withdraw position
+                    </button>
+                  ) : null}
                 </>
               )}
             </div>
           ) : null
         ) : (
-          <p className="mt-2 max-w-xl text-xs text-[var(--muted)]">
-            Locking PLAY from this page requires the positions contract to be configured.
+          <p className="mt-2 max-w-sm text-xs text-[var(--muted)]">
+            Staking is not configured for this deployment.
           </p>
         )}
 
-        {err ? <p className="mt-2 max-w-xl text-[11px] text-rose-300/90">{err}</p> : null}
+        {err ? <p className="mt-2 max-w-sm text-xs text-rose-300/90">{err}</p> : null}
         {okMsg ? (
-          <p className="mt-2 max-w-xl text-xs font-medium text-emerald-400/95" role="status">
+          <p className="mt-2 max-w-sm text-xs font-medium text-emerald-400/95" role="status">
             {okMsg}
           </p>
         ) : null}

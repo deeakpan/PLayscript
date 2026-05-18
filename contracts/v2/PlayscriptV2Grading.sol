@@ -27,9 +27,11 @@ library PlayscriptV2Grading {
         return false;
     }
 
-    function resolveMask(uint8 sport, uint8[12] memory legKinds, Facts memory f) internal pure returns (uint16 mask) {
+    uint8 internal constant MARKET_LEGS = 15;
+
+    function resolveMask(uint8 sport, uint8[15] memory legKinds, Facts memory f) internal pure returns (uint16 mask) {
         unchecked {
-            for (uint8 i; i < 12; ++i) {
+            for (uint8 i; i < MARKET_LEGS; ++i) {
                 if (legHitByKind(sport, legKinds[i], f)) {
                     mask |= uint16(1) << i;
                 }
@@ -47,6 +49,7 @@ library PlayscriptV2Grading {
         if (k == 3) return h == a;
         if (k == 4) return h + a >= 3;
         if (k == 5) return h + a <= 1;
+        if (k == 36) return h + a <= 2;
         if (k == 6) return h >= 1 && a >= 1;
         if (k == 7) return a == 0;
         if (k == 8) return h == 0;
@@ -73,7 +76,13 @@ library PlayscriptV2Grading {
         if (k == 33) return f.yellowHome >= 2;
         if (k == 34) return f.yellowAway >= 2;
         if (k == 35) return f.yellowHome >= 1 && f.yellowAway >= 1;
+        if (k == 37) return _soccerSecondHalfTotal(f) >= 2;
+        if (k == 39) return f.finalHome > f.htHome && f.finalAway > f.htAway;
         return false;
+    }
+
+    function _soccerSecondHalfTotal(Facts memory f) private pure returns (uint256) {
+        return (f.finalHome - f.htHome) + (f.finalAway - f.htAway);
     }
 
     function _basketballKind(uint8 k, Facts memory f) private pure returns (bool) {
@@ -127,6 +136,8 @@ library PlayscriptV2Grading {
         if (k == 71) return t >= 55;
         if (k == 72) return h == 0 || a == 0;
         if (k == 73) return q1 >= 15;
+        if (k == 74) return h >= 20;
+        if (k == 75) return a >= 20;
         return false;
     }
 
@@ -149,6 +160,9 @@ library PlayscriptV2Grading {
         if (k == 90) return h >= 1 && a >= 1;
         if (k == 91) return h == 0 || a == 0;
         if (k == 92) return h < 7 && a < 7;
+        if (k == 93) return t >= 9;
+        if (k == 94) return h >= 3;
+        if (k == 95) return a >= 3;
         return false;
     }
 }

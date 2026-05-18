@@ -3,12 +3,12 @@
   "network": "somnia",
   "graphNetwork": "somnia-testnet",
   "chainId": 50312,
-  "deployedAt": "2026-05-17T18:30:47.414Z",
+  "deployedAt": "2026-05-18T16:08:26.267Z",
   "deployer": "0x68ac96ce64d62386b1a5e2dff8f0f01feed46e09",
   "playToken": "0xEFA95569C06B8D77fC80092cf5BAa7f766728b83",
   "nativeHostDeployWei": "40000000000000000000",
   "nativeKernelFundWei": "50000000000000000000",
-  "kernelFundTxBlock": "384964184",
+  "kernelFundTxBlock": "385880742",
   "kernelSettlement": {
     "abi": "espn-v2",
     "fetchCounts": {
@@ -20,25 +20,29 @@
   },
   "contracts": {
     "PlayscriptKernel": {
-      "address": "0xc61b75b5628f6651bdd9ce8c902b4f610ee0ed31",
-      "deploymentBlock": "384964138"
+      "address": "0x1be59d595ff88b0265d74699996d13d939a33fcc",
+      "deploymentBlock": "385880706"
     },
     "PlayVault": {
-      "address": "0x7f9a2c5848372a4423f2b67bef1d85770f69334b",
-      "deploymentBlock": "384964207"
+      "address": "0xcbd29796cbc88be3986603bc46c1f7fa5c50f463",
+      "deploymentBlock": "385880767"
     },
     "PlayscriptReactivityHost": {
-      "address": "0xf36c8b01d37a6c907e72ef7c61b8e608f07a4359",
-      "deploymentBlock": "384964289"
+      "address": "0x24cbb1b86bcf48245b30f617797acb7dec294bf8",
+      "deploymentBlock": "385880841"
     },
     "PlayscriptV2Positions": {
-      "address": "0x8af60cd84d6170b55104d26ffb2cc3c24a92da9f",
-      "deploymentBlock": "385107468"
+      "address": "0xaa063c96307782a52623ef095506be851b839e64",
+      "deploymentBlock": "385880892"
     },
     "PlayscriptV2LockRegistry": {
-      "address": "0x8755c93c763936de237fb10ed4c89019e5087981",
-      "deploymentBlock": "385107494"
+      "address": "0x5ad89bedf871d9731ec79fe5f1120e73939fe5a6",
+      "deploymentBlock": "385880918"
     }
   },
-  "previousPlayscriptV2Positions": "0xbdc9538901230306ee162c825f9ca1b5ad0f3ccb"
+  "previousPlayscriptKernel": "0xb8033147cf1d4f707245a8ad1baedc9d7b405b35",
+  "previousPlayscriptV2Positions": "0xe980f89827b71aaa9748ed584c9ccb17207ad66b",
+  "previousPlayscriptV2LockRegistry": "0x377b407270d6c4e33b717decdac236f2271f4403",
+  "previousPlayVault": "0x86a0d3c6211a79482c7d068cc7f23bc74e69e32a",
+  "previousPlayscriptReactivityHost": "0x7a110e24b68dafccc33ecc02163c24fab62a20dd"
 }

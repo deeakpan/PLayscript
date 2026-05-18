@@ -10,6 +10,7 @@ import {
   v2LegKindsTuple,
   V2_LEG_COUNT,
   type PlayscriptV2Leg,
+  type V2LegKindsTuple,
 } from "./playscript-v2-legs";
 
 /** Resolve a dotted / bracket JSON path (same shape Somnia JSON API agents use). */
@@ -205,9 +206,10 @@ export type V2LegWeightsTuple = readonly [
   number,
   number,
   number,
+  number,
+  number,
+  number,
 ];
-
-export type V2LegKindsTuple = V2LegWeightsTuple;
 
 export function v2MarketLegsForFixture(
   fixtureId: string,

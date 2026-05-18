@@ -1,14 +1,19 @@
 import type { ScriptSportKey } from "./fixtures-shared";
 import {
+  V2_BASKETBALL_MARKET_LEG_KINDS,
   V2_BASKETBALL_LEG_KINDS as BK,
+  V2_MLB_MARKET_LEG_KINDS,
   V2_MLB_LEG_KINDS as MLB,
+  V2_NFL_MARKET_LEG_KINDS,
   V2_NFL_LEG_KINDS as NFL,
-  V2_SOCCER_CORE_LEG_KINDS,
+  V2_SOCCER_MARKET_LEG_KINDS,
   V2_SOCCER_LEG_KINDS as SC,
 } from "./playscript-v2-leg-kinds";
 
-/** Must match `PlayscriptKernel` + UI picker. */
-export const V2_LEG_COUNT = 12;
+export { V2_SOCCER_MARKET_LEG_KINDS };
+
+/** Must match `PlayscriptKernel` + UI picker (`LegBitmask.MARKET_BITS`). */
+export const V2_LEG_COUNT = 15;
 export const V2_PICK_COUNT = 5;
 export const V2_MASK_MAX = (1 << V2_LEG_COUNT) - 1;
 
@@ -53,6 +58,7 @@ function defsForSport(home: string, away: string, sportKey: ScriptSportKey): Leg
         def(SC.DRAW, "Draw", "match_result", "hard"),
         def(SC.OVER_25, "Over 2.5 total goals", "goals", "easy"),
         def(SC.UNDER_15, "Under 1.5 total goals", "goals", "hard"),
+        def(SC.UNDER_25, "Under 2.5 total goals", "goals", "medium"),
         def(SC.BTTS, "Both teams score", "goals", "medium"),
         def(SC.HOME_CS, `${home} clean sheet`, "defence", "medium"),
         def(SC.AWAY_CS, `${away} clean sheet`, "defence", "medium"),
@@ -71,6 +77,8 @@ function defsForSport(home: string, away: string, sportKey: ScriptSportKey): Leg
         def(SC.HOME_YELLOW_2PLUS, `${home} receives 2+ yellow cards`, "cards", "medium"),
         def(SC.AWAY_YELLOW_2PLUS, `${away} receives 2+ yellow cards`, "cards", "medium"),
         def(SC.BOTH_TEAMS_YELLOW, "Both teams receive a yellow card", "cards", "medium"),
+        def(SC.SH_OVER_15, "Over 1.5 goals in the second half", "half_time", "medium"),
+        def(SC.SH_BTTS, "Both teams score in the second half", "goals", "medium"),
         def(SC.HOME_RED_CARD, `${home} receives a red card`, "cards", "hard"),
         def(SC.AWAY_RED_CARD, `${away} receives a red card`, "cards", "hard"),
         def(SC.HT_OVER_15, "Over 1.5 goals in the first half", "half_time", "medium"),
@@ -113,6 +121,8 @@ function defsForSport(home: string, away: string, sportKey: ScriptSportKey): Leg
         def(NFL.TOTAL_55_PLUS, "Combined score 55+", "totals", "hard"),
         def(NFL.EITHER_SHUTOUT, "Either team shutout (0 points)", "defence", "hard"),
         def(NFL.Q1_COMBINED_OVER_14, "1st quarter over 14.5 combined points", "quarters", "medium"),
+        def(NFL.HOME_20_PLUS, `${home} scores 20+ points`, "offence", "medium"),
+        def(NFL.AWAY_20_PLUS, `${away} scores 20+ points`, "offence", "medium"),
       ];
     case "baseball":
       return [
@@ -128,117 +138,121 @@ function defsForSport(home: string, away: string, sportKey: ScriptSportKey): Leg
         def(MLB.BOTH_SCORE, "Both teams score at least once", "offence", "easy"),
         def(MLB.EITHER_SHUTOUT, "Either team shutout (0 runs)", "defence", "hard"),
         def(MLB.BOTH_UNDER_7, "Each team scores fewer than 7 runs", "totals", "medium"),
+        def(MLB.OVER_8_5, "Over 8.5 total runs", "totals", "easy"),
+        def(MLB.HOME_3_PLUS, `${home} scores 3+ runs`, "offence", "medium"),
+        def(MLB.AWAY_3_PLUS, `${away} scores 3+ runs`, "offence", "medium"),
       ];
   }
 }
 
-function fnv1a32(seed: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
-}
-
-function mulberry32(a: number) {
-  return () => {
-    let t = (a += 0x6d2b79f5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-const MAX_SOCCER_CARD_LEGS_IN_MARKET = 2;
-
-function shuffleInPlace<T>(arr: T[], rng: () => number): void {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
-
-function selectSoccerMarketLegs(
-  fixtureId: string,
-  homeTeam: string,
-  awayTeam: string,
-): readonly PlayscriptV2Leg[] {
-  const pool = defsForSport(homeTeam, awayTeam, "soccer");
-  const byKind = new Map(pool.map((d) => [d.kind, d]));
-  const rng = mulberry32(fnv1a32(`soccer:${fixtureId.trim()}`));
-
-  const chosen: LegDef[] = [];
-  const usedKinds = new Set<number>();
-
-  for (const kind of V2_SOCCER_CORE_LEG_KINDS) {
-    const leg = byKind.get(kind);
-    if (!leg) throw new Error(`Missing core soccer leg kind ${kind}`);
-    chosen.push(leg);
-    usedKinds.add(kind);
-  }
-
-  const optional = pool.filter((d) => !usedKinds.has(d.kind));
-  shuffleInPlace(optional, rng);
-
-  let cardLegs = 0;
-  for (const leg of optional) {
-    if (chosen.length >= V2_LEG_COUNT) break;
-    if (leg.type === "cards") {
-      if (cardLegs >= MAX_SOCCER_CARD_LEGS_IN_MARKET) continue;
-      cardLegs++;
+function marketKindOrder(sportKey: ScriptSportKey): readonly number[] {
+  switch (sportKey) {
+    case "soccer":
+      return V2_SOCCER_MARKET_LEG_KINDS;
+    case "basketball":
+      return V2_BASKETBALL_MARKET_LEG_KINDS;
+    case "american_football":
+      return V2_NFL_MARKET_LEG_KINDS;
+    case "baseball":
+      return V2_MLB_MARKET_LEG_KINDS;
+    default: {
+      const _x: never = sportKey;
+      return _x;
     }
-    chosen.push(leg);
-    usedKinds.add(leg.kind);
   }
-
-  if (chosen.length < V2_LEG_COUNT) {
-    throw new Error(`Soccer leg pool too small: need ${V2_LEG_COUNT}, got ${chosen.length}`);
-  }
-
-  shuffleInPlace(chosen, rng);
-
-  return chosen.map((def, i) => ({
-    ...def,
-    id: i + 1,
-  }));
 }
 
-/** Deterministic pick — 12 unique leg kinds per fixture (soccer: core results + HT, then varied fill). */
-export function selectV2MarketLegs(
-  fixtureId: string,
+/** Build the canonical 12-leg market (paired outcomes, same for every fixture of that sport). */
+function buildStructuredMarketLegs(
   homeTeam: string,
   awayTeam: string,
   sportKey: ScriptSportKey,
 ): readonly PlayscriptV2Leg[] {
-  if (sportKey === "soccer") {
-    return selectSoccerMarketLegs(fixtureId, homeTeam, awayTeam);
-  }
-
   const h = homeTeam.trim() || "Home";
   const a = awayTeam.trim() || "Away";
   const pool = defsForSport(h, a, sportKey);
-  const rng = mulberry32(fnv1a32(`${sportKey}:${fixtureId.trim()}`));
-  const indices = pool.map((_, i) => i);
-  shuffleInPlace(indices, rng);
+  const byKind = new Map(pool.map((d) => [d.kind, d]));
+  const order = marketKindOrder(sportKey);
+
+  if (order.length !== V2_LEG_COUNT) {
+    throw new Error(`${sportKey} market kind list must have ${V2_LEG_COUNT} entries, got ${order.length}`);
+  }
 
   const chosen: LegDef[] = [];
-  const usedKinds = new Set<number>();
-  for (const idx of indices) {
-    const leg = pool[idx]!;
-    if (usedKinds.has(leg.kind)) continue;
-    usedKinds.add(leg.kind);
+  for (const kind of order) {
+    const leg = byKind.get(kind);
+    if (!leg) throw new Error(`Missing ${sportKey} leg kind ${kind} in defsForSport`);
     chosen.push(leg);
-    if (chosen.length === V2_LEG_COUNT) break;
-  }
-  if (chosen.length < V2_LEG_COUNT) {
-    throw new Error(`Leg pool too small for ${sportKey}: need ${V2_LEG_COUNT}, got ${chosen.length}`);
   }
 
-  return chosen.map((def, i) => ({
-    ...def,
+  return chosen.map((legDef, i) => ({
+    ...legDef,
     id: i + 1,
   }));
+}
+
+/**
+ * Deterministic 12-leg market per sport: paired results, totals, and team mirrors —
+ * not a random subset of a larger pool.
+ */
+export function selectV2MarketLegs(
+  _fixtureId: string,
+  homeTeam: string,
+  awayTeam: string,
+  sportKey: ScriptSportKey,
+): readonly PlayscriptV2Leg[] {
+  return buildStructuredMarketLegs(homeTeam, awayTeam, sportKey);
+}
+
+/** Build the 12 slot labels from on-chain `legKinds` (bit `i` ↔ slot `i + 1`). */
+export function v2LegsFromRegisteredKinds(
+  homeTeam: string,
+  awayTeam: string,
+  sportKey: ScriptSportKey,
+  legKinds: readonly number[],
+): readonly PlayscriptV2Leg[] {
+  if (legKinds.length !== V2_LEG_COUNT) {
+    throw new Error(`Expected ${V2_LEG_COUNT} leg kinds, got ${legKinds.length}`);
+  }
+  const h = homeTeam.trim() || "Home";
+  const a = awayTeam.trim() || "Away";
+  const pool = defsForSport(h, a, sportKey);
+  const byKind = new Map(pool.map((d) => [d.kind, d]));
+  return legKinds.map((kind, i) => {
+    const leg = byKind.get(kind);
+    return {
+      id: i + 1,
+      kind,
+      description: leg?.description ?? `Leg kind ${kind}`,
+      type: leg?.type ?? "unknown",
+      difficulty: leg?.difficulty ?? "medium",
+      weight: leg?.weight ?? 1.5,
+      chainWeight: leg?.chainWeight ?? 15,
+    };
+  });
+}
+
+/** True when this match was registered with a different 12-leg board than today's template. */
+export function v2RegisteredLegKindsDifferFromCurrentMarket(
+  sportKey: ScriptSportKey,
+  registeredLegKinds: readonly number[],
+): boolean {
+  if (registeredLegKinds.length !== V2_LEG_COUNT) return false;
+  const current = marketKindOrder(sportKey);
+  return registeredLegKinds.some((k, i) => k !== current[i]);
+}
+
+function v2MarketLegsForGrading(
+  fixtureId: string,
+  homeTeam: string,
+  awayTeam: string,
+  sportKey: ScriptSportKey,
+  registeredLegKinds?: readonly number[],
+): readonly PlayscriptV2Leg[] {
+  if (registeredLegKinds?.length === V2_LEG_COUNT) {
+    return v2LegsFromRegisteredKinds(homeTeam, awayTeam, sportKey, registeredLegKinds);
+  }
+  return selectV2MarketLegs(fixtureId, homeTeam, awayTeam, sportKey);
 }
 
 /** @deprecated Use `selectV2MarketLegs(fixtureId, …)`. */
@@ -252,7 +266,7 @@ export function generateV2MarketLegs(
 
 export const generateEightLegs = generateV2MarketLegs;
 
-export function v2LegKindsTuple(legs: readonly PlayscriptV2Leg[]): [
+export type V2LegKindsTuple = readonly [
   number,
   number,
   number,
@@ -265,24 +279,16 @@ export function v2LegKindsTuple(legs: readonly PlayscriptV2Leg[]): [
   number,
   number,
   number,
-] {
+  number,
+  number,
+  number,
+];
+
+export function v2LegKindsTuple(legs: readonly PlayscriptV2Leg[]): V2LegKindsTuple {
   if (legs.length !== V2_LEG_COUNT) {
     throw new Error(`Expected ${V2_LEG_COUNT} legs`);
   }
-  return legs.map((L) => L.kind) as [
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-  ];
+  return legs.map((L) => L.kind) as unknown as V2LegKindsTuple;
 }
 
 export function difficultyLabel(d: PlayscriptV2Difficulty): string {
@@ -347,9 +353,16 @@ export function describeV2LegMaskPicks(
   awayTeam: string,
   sportKey: ScriptSportKey,
   legMask12: number,
+  registeredLegKinds?: readonly number[],
 ): readonly V2LegPickDescription[] {
   const mask = legMask12 & V2_MASK_MAX;
-  const market = selectV2MarketLegs(fixtureId, homeTeam, awayTeam, sportKey);
+  const market = v2MarketLegsForGrading(
+    fixtureId,
+    homeTeam,
+    awayTeam,
+    sportKey,
+    registeredLegKinds,
+  );
   const byId = new Map(market.map((l) => [l.id, l]));
   return bitmaskToSortedLegIds(mask).map((legId) => {
     const leg = byId.get(legId);
@@ -368,8 +381,63 @@ export function formatV2LegMaskPlainText(
   awayTeam: string,
   sportKey: ScriptSportKey,
   legMask12: number,
+  registeredLegKinds?: readonly number[],
 ): string {
-  const picks = describeV2LegMaskPicks(fixtureId, homeTeam, awayTeam, sportKey, legMask12);
+  const picks = describeV2LegMaskPicks(
+    fixtureId,
+    homeTeam,
+    awayTeam,
+    sportKey,
+    legMask12,
+    registeredLegKinds,
+  );
   if (picks.length === 0) return "No picks decoded";
   return picks.map((p) => p.description).join(" · ");
+}
+
+export type V2GradedPick = V2LegPickDescription & {
+  /** `null` until the match is settled onchain. */
+  correct: boolean | null;
+};
+
+/** Grade each selected leg against `resolvedLegsBitmask` (bit index = leg id − 1). */
+export function gradeV2LegMaskPicks(
+  fixtureId: string,
+  homeTeam: string,
+  awayTeam: string,
+  sportKey: ScriptSportKey,
+  legMask12: number,
+  resolvedLegsBitmask: number,
+  settled: boolean,
+  registeredLegKinds?: readonly number[],
+): { picks: readonly V2GradedPick[]; correctCount: number; totalPicks: number } {
+  const picks = describeV2LegMaskPicks(
+    fixtureId,
+    homeTeam,
+    awayTeam,
+    sportKey,
+    legMask12,
+    registeredLegKinds,
+  );
+  const resolved = resolvedLegsBitmask & V2_MASK_MAX;
+  let correctCount = 0;
+  const graded: V2GradedPick[] = picks.map((p) => {
+    if (!settled) {
+      return { ...p, correct: null };
+    }
+    const bit = 1 << (p.legId - 1);
+    const correct = (resolved & bit) !== 0;
+    if (correct) correctCount++;
+    return { ...p, correct };
+  });
+  return { picks: graded, correctCount, totalPicks: picks.length };
+}
+
+/** All 15-bit masks with exactly `V2_PICK_COUNT` bits set (C(15,5) = 3003). */
+export function allV2FivePickMasks(): readonly number[] {
+  const out: number[] = [];
+  for (let mask = 0; mask <= V2_MASK_MAX; mask++) {
+    if (bitmaskPopcount(mask) === V2_PICK_COUNT) out.push(mask);
+  }
+  return out;
 }

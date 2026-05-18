@@ -14,8 +14,8 @@ interface IERC20Balances {
 }
 
 /// @title PlayscriptKernel
-/// @notice Match ledger with 12 weighted legs + Somnia JSON API settlement (ESPN: 2–8 `fetchUint` calls per sport).
-/// @dev Leg masks use 12 bits; exactly 5 must be set for a valid script difficulty score. Scheduler callbacks use `msg.value == 0`;
+/// @notice Match ledger with 15 weighted legs + Somnia JSON API settlement (ESPN: 2–8 `fetchUint` calls per sport).
+/// @dev Leg masks use 15 bits; exactly 5 must be set for a valid script difficulty score. Scheduler callbacks use `msg.value == 0`;
 ///      `startSettle` needs the kernel to hold `5 × _perAgentDeposit()` unless someone uses `settleMatchPayable`.
 contract PlayscriptKernel {
     using LegBitmask for uint16;
@@ -67,8 +67,8 @@ contract PlayscriptKernel {
         string summaryUrl;
         Selectors sel;
         MatchState state;
-        uint8[12] legKinds;
-        uint8[12] legWeights;
+        uint8[15] legKinds;
+        uint8[15] legWeights;
         bool exists;
         bool settled;
         bool settleInProgress;
@@ -85,7 +85,7 @@ contract PlayscriptKernel {
         uint256 homeQ2;
         uint256 awayQ1;
         uint256 awayQ2;
-        /// @notice Which of 12 legs hit at settlement (bits 0–11). `playscript.md` §8.
+        /// @notice Which of 15 legs hit at settlement (bits 0–14).
         uint16 resolvedLegsBitmask;
         /// @notice Reserved vault liability at registration — 9.8% of vault PLAY at that time (`playscript.md` §6).
         uint256 matchLiabilityCap;
@@ -229,8 +229,8 @@ contract PlayscriptKernel {
         string calldata selHomeQ2,
         string calldata selAwayQ1,
         string calldata selAwayQ2,
-        uint8[12] calldata legKinds,
-        uint8[12] calldata legWeights
+        uint8[15] calldata legKinds,
+        uint8[15] calldata legWeights
     ) external returns (uint256 matchId) {
         if (kickoff <= block.timestamp) revert BadKickoff();
         _validateWeights(legWeights);
@@ -480,7 +480,7 @@ contract PlayscriptKernel {
         if (!m.exists) revert BadMatch();
         if (!legMask12.hasExactBits(5)) revert BadMatch();
         unchecked {
-            for (uint256 i; i < 12; ++i) {
+            for (uint256 i; i < LegBitmask.MARKET_BITS; ++i) {
                 if ((legMask12 >> i) & 1 == 1) {
                     score += m.legWeights[i];
                 }
@@ -637,9 +637,9 @@ contract PlayscriptKernel {
         emit SettleRetryScheduled(matchId, newFinalizeDelay, retryAt, field, status);
     }
 
-    function _validateWeights(uint8[12] calldata w) internal pure {
+    function _validateWeights(uint8[15] calldata w) internal pure {
         unchecked {
-            for (uint256 i; i < 12; ++i) {
+            for (uint256 i; i < LegBitmask.MARKET_BITS; ++i) {
                 uint8 x = w[i];
                 if (x != 10 && x != 15 && x != 25) revert BadWeights();
             }

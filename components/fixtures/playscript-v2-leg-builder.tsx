@@ -135,14 +135,14 @@ export function PlayscriptV2LegBuilder({
 
   return (
     <section
-      aria-label="Playscript v2 twelve-leg script builder"
+      aria-label="Playscript v2 fifteen-leg script builder"
       className="max-w-5xl pb-2"
     >
       <div className="relative grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-8">
         <div className="min-w-0 space-y-4 pb-20 lg:col-start-1 lg:row-start-1 lg:pb-2">
           <div className="space-y-1.5">
             <h3 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
-              Twelve-leg script (v2 preview)
+              Fifteen-leg script
             </h3>
             <p className="text-sm leading-relaxed text-[var(--muted)]">
               {V2_LEG_COUNT} propositions (home & away).{" "}
