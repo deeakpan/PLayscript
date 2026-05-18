@@ -38,6 +38,9 @@ export type PlayscriptV2FixtureScript =
       matchOpen: boolean;
       isWinner: boolean | null;
       payoutFormatted: string | null;
+      htScoreLabel: string | null;
+      finalScoreLabel: string | null;
+      usesLegacyLegBoard: boolean;
     }
   | { hasScript: false };
 

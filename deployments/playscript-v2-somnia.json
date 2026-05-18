@@ -3,12 +3,12 @@
   "network": "somnia",
   "graphNetwork": "somnia-testnet",
   "chainId": 50312,
-  "deployedAt": "2026-05-18T16:08:26.267Z",
+  "deployedAt": "2026-05-18T16:23:14.914Z",
   "deployer": "0x68ac96ce64d62386b1a5e2dff8f0f01feed46e09",
   "playToken": "0xEFA95569C06B8D77fC80092cf5BAa7f766728b83",
   "nativeHostDeployWei": "40000000000000000000",
   "nativeKernelFundWei": "50000000000000000000",
-  "kernelFundTxBlock": "385880742",
+  "kernelFundTxBlock": "385889574",
   "kernelSettlement": {
     "abi": "espn-v2",
     "fetchCounts": {
@@ -20,29 +20,29 @@
   },
   "contracts": {
     "PlayscriptKernel": {
-      "address": "0x1be59d595ff88b0265d74699996d13d939a33fcc",
-      "deploymentBlock": "385880706"
+      "address": "0x3bf233729b28257be90c24ade9be60d379ce0cc0",
+      "deploymentBlock": "385889535"
     },
     "PlayVault": {
-      "address": "0xcbd29796cbc88be3986603bc46c1f7fa5c50f463",
-      "deploymentBlock": "385880767"
+      "address": "0xe15642010404e0deded5d4b954bdae78cd11b394",
+      "deploymentBlock": "385889600"
     },
     "PlayscriptReactivityHost": {
-      "address": "0x24cbb1b86bcf48245b30f617797acb7dec294bf8",
-      "deploymentBlock": "385880841"
+      "address": "0x1e9d1ee568b2a87a037becc1c305c4a16f6561ba",
+      "deploymentBlock": "385889677"
     },
     "PlayscriptV2Positions": {
-      "address": "0xaa063c96307782a52623ef095506be851b839e64",
-      "deploymentBlock": "385880892"
+      "address": "0x6eafb54feeea97eeed20e6546f537ad1c2c3111a",
+      "deploymentBlock": "385889728"
     },
     "PlayscriptV2LockRegistry": {
-      "address": "0x5ad89bedf871d9731ec79fe5f1120e73939fe5a6",
-      "deploymentBlock": "385880918"
+      "address": "0x4ece331fca7992e47d21e0b23e41f4781acd2cda",
+      "deploymentBlock": "385889755"
     }
   },
-  "previousPlayscriptKernel": "0xb8033147cf1d4f707245a8ad1baedc9d7b405b35",
-  "previousPlayscriptV2Positions": "0xe980f89827b71aaa9748ed584c9ccb17207ad66b",
-  "previousPlayscriptV2LockRegistry": "0x377b407270d6c4e33b717decdac236f2271f4403",
-  "previousPlayVault": "0x86a0d3c6211a79482c7d068cc7f23bc74e69e32a",
-  "previousPlayscriptReactivityHost": "0x7a110e24b68dafccc33ecc02163c24fab62a20dd"
+  "previousPlayscriptKernel": "0x1be59d595ff88b0265d74699996d13d939a33fcc",
+  "previousPlayscriptV2Positions": "0xaa063c96307782a52623ef095506be851b839e64",
+  "previousPlayscriptV2LockRegistry": "0x5ad89bedf871d9731ec79fe5f1120e73939fe5a6",
+  "previousPlayVault": "0xcbd29796cbc88be3986603bc46c1f7fa5c50f463",
+  "previousPlayscriptReactivityHost": "0x24cbb1b86bcf48245b30f617797acb7dec294bf8"
 }
