@@ -41,6 +41,7 @@ yarn-error.log*
 
 # hardhat v2 test helper (local)
 .v2-test-match.tmp.json
+/data/faucet-claims.json
 next-env.d.ts
 
 # hardhat

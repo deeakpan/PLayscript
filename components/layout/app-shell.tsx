@@ -10,6 +10,7 @@ import { HowItWorksTocPanel } from "@/components/how-it-works/how-it-works-toc-p
 import { useHowItWorksScroll } from "@/components/how-it-works/how-it-works-scroll-context";
 import { ConnectWallet } from "@/components/web3/connect-wallet";
 import { PlayBalance } from "@/components/web3/play-balance";
+import { PlayFaucet } from "@/components/web3/play-faucet";
 
 const nav = [
   { href: "/", label: "Matches", icon: House },
@@ -195,8 +196,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </h1>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-            <div className="hidden md:block">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <PlayFaucet />
+            <div className="hidden sm:block">
               <PlayBalance />
             </div>
             <Link
