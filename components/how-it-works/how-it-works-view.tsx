@@ -241,10 +241,104 @@ export function HowItWorksView() {
               your script is ready to claim.
             </p>
             <p>
-              <strong>Vaults</strong> (in the app menu) are for people who supply PLAY liquidity to the
-              pool — separate from playing a script on a match.
+              Winnings are paid from the shared <strong>PLAY vault</strong> — see{" "}
+              <a href="#vault-lp" className="font-medium text-[var(--accent)] underline-offset-2 hover:underline">
+                Vault &amp; LP
+              </a>{" "}
+              if you want to supply liquidity instead of playing scripts.
             </p>
           </Prose>
+        </MajorSection>
+
+        <SectionBreak />
+
+        <MajorSection id="vault-lp" title="Vault & liquidity (LP)">
+          <Prose>
+            <p>
+              The <strong>Play vault</strong> is the PLAY pool behind every match. When you lock a script,
+              your stake goes into this vault. When you win, the vault pays you (stake × multiplier on your
+              net stake). When you lose, that PLAY stays in the vault.
+            </p>
+            <p>
+              <strong>Liquidity providers (LPs)</strong> are people who deposit PLAY into the vault up
+              front. They take the other side of the game: they earn when players lose, and they fund
+              payouts when players win. You do not need to be an LP to play a script — it is a separate
+              role. Open <strong>Vaults</strong> in the app menu to deposit or withdraw.
+            </p>
+          </Prose>
+
+          <div className="mt-4 space-y-4">
+            <ExampleCard>
+              <p className="text-[var(--muted)]">
+                Think of the vault as one shared wallet. Player stakes flow in; winner payouts flow out.
+                LPs own a <strong className="text-[var(--foreground)]">share</strong> of whatever is left.
+              </p>
+              <ExampleRow label="You lock 100 PLAY" value="→ vault" />
+              <ExampleRow label="You win at 7× (net stake)" value="← vault pays" highlight />
+              <ExampleRow label="You lose" value="PLAY stays in vault" />
+              <ExampleRow label="LPs" value="share rises / falls with pool" />
+            </ExampleCard>
+          </div>
+
+          <Prose>
+            <p className="mt-4">
+              <strong>Depositing as an LP.</strong> You send PLAY to the vault and receive{" "}
+              <strong>vault shares</strong>. Your share of the pool is your shares ÷ total shares. If the
+              vault grows because losing stakes stayed inside (and from the small{" "}
+              <strong>0.5% lock fee</strong> on each script lock), each share is worth more PLAY. If many
+              players win, the vault pays out and shares are worth less.
+            </p>
+            <p>
+              <strong>Match liability (why withdrawal is capped).</strong> When a match is registered on
+              chain, the system <strong>reserves up to 9.8%</strong> of the vault&apos;s PLAY balance for
+              that match — headroom for possible winner payouts. As players lock scripts, real liability
+              fills that bucket (based on stake × multiplier). While matches are open, that reserved PLAY
+              is not available for LP withdrawals.
+            </p>
+            <p>
+              The vault also keeps a <strong>2% hard floor</strong> — a safety buffer that is never treated
+              as free cash. What LPs can withdraw today is called <strong>free float</strong>: vault balance
+              minus outstanding match liability minus that floor. The vault page shows a pie chart: liability,
+              floor, and free float.
+            </p>
+            <p>
+              <strong>Withdrawing as an LP.</strong> You burn some of your shares and receive PLAY back.
+              You only get paid up to the current <strong>free float</strong> — if most of the vault is
+              reserved for live matches, you may receive a <strong>partial</strong> withdrawal now and can
+              withdraw more after those matches settle and liability is released. There is no fixed lock-up
+              period; it depends on how many matches are active.
+            </p>
+            <p>
+              <strong>After a match settles.</strong> Liability for that match is cleared on chain. Unused
+              reserved capacity is freed, free float goes up, and LPs can withdraw more. Winning players
+              claim from the vault; losing stakes remain with LPs.
+            </p>
+            <ul>
+              <li>
+                <strong>Players</strong> — pick five, lock PLAY, claim if you win.
+              </li>
+              <li>
+                <strong>LPs</strong> — deposit PLAY, hold shares, withdraw when free float allows.
+              </li>
+            </ul>
+          </Prose>
+
+          <div className="mt-4 space-y-4">
+            <ExampleCard>
+              <p className="text-[var(--muted)]">
+                Simplified vault with <strong className="text-[var(--foreground)]">1,000,000 PLAY</strong>{" "}
+                and one new match registered (9.8% reserved).
+              </p>
+              <ExampleRow label="Vault balance" value="1,000,000 PLAY" />
+              <ExampleRow label="Reserved for that match (max)" value="98,000 PLAY" />
+              <ExampleRow label="2% hard floor" value="20,000 PLAY" />
+              <ExampleRow label="Free float (approx.)" value="882,000 PLAY" highlight />
+              <p className="pt-2 text-xs leading-relaxed text-[var(--muted)]">
+                Each additional registered match reserves another 9.8% of the vault total until the safety
+                checks block new matches. As matches finish, reserved amounts drop and free float grows.
+              </p>
+            </ExampleCard>
+          </div>
         </MajorSection>
 
         {SPORT_KEYS.map((sportKey) => {

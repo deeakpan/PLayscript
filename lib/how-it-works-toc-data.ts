@@ -12,6 +12,7 @@ export const HIW_SCROLL_SPY_IDS = [
   "stake-example",
   "before-kickoff",
   "after-match",
+  "vault-lp",
   ...HIW_SPORT_KEYS.map((k) => `sport-${k}`),
 ] as const;
 
@@ -35,6 +36,7 @@ export const HIW_TOC_GROUPS: HiWTocGroup[] = [
       { id: "stake-example", label: "Stake & multiplier" },
       { id: "before-kickoff", label: "Before kickoff" },
       { id: "after-match", label: "After the match" },
+      { id: "vault-lp", label: "Vault & LP" },
     ],
   },
   {
