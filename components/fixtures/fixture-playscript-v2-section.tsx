@@ -38,6 +38,7 @@ import {
 } from "@/lib/playscript-v2-register-args";
 import {
   ESPN_SCOREBOARD_SELECTORS,
+  ESPN_SOCCER_SUMMARY_FINAL_SELECTORS,
   ESPN_SOCCER_SUMMARY_SELECTORS,
 } from "@/lib/espn-v2-selectors";
 import {
@@ -253,6 +254,10 @@ export function FixturePlayscriptV2Section({
     if (!env.ok || !leagueSlug.trim()) return null;
     const legs = v2MarketLegsForFixture(fixtureId, homeTeam, awayTeam, sportKey);
     const urls = buildV2EspnRegisterUrls(leagueSlug, fixtureId, sportKey);
+    const ftScoreSel =
+      sportKey === "soccer"
+        ? ESPN_SOCCER_SUMMARY_FINAL_SELECTORS
+        : ESPN_SCOREBOARD_SELECTORS;
     return {
       kernel: env.kernel,
       sport: v2KernelSportEnum(sportKey),
@@ -261,8 +266,8 @@ export function FixturePlayscriptV2Section({
       url: urls.url,
       scoreboardUrl: urls.scoreboardUrl,
       summaryUrl: urls.summaryUrl,
-      selHomeScore: ESPN_SCOREBOARD_SELECTORS.homeScore,
-      selAwayScore: ESPN_SCOREBOARD_SELECTORS.awayScore,
+      selHomeScore: ftScoreSel.homeScore,
+      selAwayScore: ftScoreSel.awayScore,
       selHtHome: ESPN_SOCCER_SUMMARY_SELECTORS.htHome,
       selHtAway: ESPN_SOCCER_SUMMARY_SELECTORS.htAway,
       selYellowHome: ESPN_SOCCER_SUMMARY_SELECTORS.yellowHome,

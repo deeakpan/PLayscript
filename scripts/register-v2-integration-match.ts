@@ -27,6 +27,7 @@ import {
 } from "../lib/playscript-v2-register-args";
 import {
   ESPN_SCOREBOARD_SELECTORS,
+  ESPN_SOCCER_SUMMARY_FINAL_SELECTORS,
   ESPN_SOCCER_SUMMARY_SELECTORS,
 } from "../lib/espn-v2-selectors";
 import { waitWrite } from "./lib/wait-write";
@@ -102,8 +103,8 @@ async function main() {
       urls.url,
       urls.scoreboardUrl,
       urls.summaryUrl,
-      ESPN_SCOREBOARD_SELECTORS.homeScore,
-      ESPN_SCOREBOARD_SELECTORS.awayScore,
+      ESPN_SOCCER_SUMMARY_FINAL_SELECTORS.homeScore,
+      ESPN_SOCCER_SUMMARY_FINAL_SELECTORS.awayScore,
       ESPN_SOCCER_SUMMARY_SELECTORS.htHome,
       ESPN_SOCCER_SUMMARY_SELECTORS.htAway,
       ESPN_SOCCER_SUMMARY_SELECTORS.yellowHome,

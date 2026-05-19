@@ -18,6 +18,8 @@ contract PlayscriptReactivityHost is SomniaEventHandler, IPlayscriptScheduler {
     mapping(uint256 => uint256) private _kickMillisToMatch;
     mapping(uint256 => uint256) private _resolveMillisToMatch;
     mapping(uint256 => uint256) private _retryMillisToMatch;
+    /// @dev Latest settle-retry schedule key per match (dedupe overlapping retries).
+    mapping(uint256 => uint256) private _matchToRetryMillis;
 
     /// @dev Jitter offset for settle-retry schedules (distinct from resolve `+ 500`).
     uint256 private constant RETRY_MILLIS_OFFSET = 1000;
@@ -104,8 +106,14 @@ contract PlayscriptReactivityHost is SomniaEventHandler, IPlayscriptScheduler {
             gasLimit: HANDLER_GAS_LIMIT
         });
 
+        uint256 prevMillis = _matchToRetryMillis[matchId];
+        if (prevMillis != 0) {
+            _retryMillisToMatch[prevMillis] = 0;
+        }
+
         uint256 subRetry = SomniaExtensions.scheduleSubscriptionAtTimestamp(address(this), retryMillis, opts);
         _retryMillisToMatch[retryMillis] = matchId + 1;
+        _matchToRetryMillis[matchId] = retryMillis;
 
         emit SettleRetryRegistered(matchId, subRetry, retryMillis);
     }
@@ -174,19 +182,24 @@ contract PlayscriptReactivityHost is SomniaEventHandler, IPlayscriptScheduler {
 
         uint256 kickPacked = _lookupKickPacked(tsMillis);
         if (kickPacked != 0) {
+            _kickMillisToMatch[tsMillis] = 0;
             kernel.lockKickoff(kickPacked - 1);
             return;
         }
 
         uint256 resolvePacked = _lookupResolvePacked(tsMillis);
         if (resolvePacked != 0) {
+            _resolveMillisToMatch[tsMillis] = 0;
             kernel.startSettle(resolvePacked - 1);
             return;
         }
 
         uint256 retryPacked = _lookupRetryPacked(tsMillis);
         if (retryPacked != 0) {
-            kernel.startSettle(retryPacked - 1);
+            uint256 matchId = retryPacked - 1;
+            _retryMillisToMatch[tsMillis] = 0;
+            _matchToRetryMillis[matchId] = 0;
+            kernel.startSettle(matchId);
         }
     }
 }

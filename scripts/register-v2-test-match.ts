@@ -34,6 +34,7 @@ import {
 } from "../lib/playscript-v2-register-args";
 import {
   ESPN_SCOREBOARD_SELECTORS,
+  ESPN_SOCCER_SUMMARY_FINAL_SELECTORS,
   ESPN_SOCCER_SUMMARY_SELECTORS,
 } from "../lib/espn-v2-selectors";
 
@@ -120,6 +121,9 @@ async function main() {
   console.log("kickoff (unix):", kickoff.toString(), `(~${kickoffOffset}s from latest block time ${nowSec})`);
   console.log("finalizeDelaySec:", finalizeDelaySec);
 
+  const ftScoreSel =
+    sportKey === "soccer" ? ESPN_SOCCER_SUMMARY_FINAL_SELECTORS : ESPN_SCOREBOARD_SELECTORS;
+
   const data = encodeFunctionData({
     abi: playscriptKernelWriteAbi,
     functionName: "registerMatch",
@@ -130,8 +134,8 @@ async function main() {
       urls.url,
       urls.scoreboardUrl,
       urls.summaryUrl,
-      ESPN_SCOREBOARD_SELECTORS.homeScore,
-      ESPN_SCOREBOARD_SELECTORS.awayScore,
+      ftScoreSel.homeScore,
+      ftScoreSel.awayScore,
       ESPN_SOCCER_SUMMARY_SELECTORS.htHome,
       ESPN_SOCCER_SUMMARY_SELECTORS.htAway,
       ESPN_SOCCER_SUMMARY_SELECTORS.yellowHome,

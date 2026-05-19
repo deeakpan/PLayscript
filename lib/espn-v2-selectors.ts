@@ -18,6 +18,12 @@ export const ESPN_SCOREBOARD_SELECTORS = {
   awayQ2: "competitions[0].competitors[1].linescores[1].displayValue",
 } as const;
 
+/** Soccer summary — final scores from `header` (same competitor order as HT paths). */
+export const ESPN_SOCCER_SUMMARY_FINAL_SELECTORS = {
+  homeScore: "header.competitions[0].competitors[0].score",
+  awayScore: "header.competitions[0].competitors[1].score",
+} as const;
+
 /** Soccer summary — 1st-half goals from `header` (not `boxscore.teams` linescores). */
 export const ESPN_SOCCER_SUMMARY_SELECTORS = {
   htHome: "header.competitions[0].competitors[0].linescores[0].displayValue",

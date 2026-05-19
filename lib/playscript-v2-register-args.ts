@@ -3,6 +3,7 @@ import { typicalMatchDurationMinutes } from "./fixture-display-status";
 import { espnPrimaryMatchUrl, espnScoreboardUrl, espnSummaryUrl } from "./espn-url";
 import {
   ESPN_SCOREBOARD_SELECTORS,
+  ESPN_SOCCER_SUMMARY_FINAL_SELECTORS,
   ESPN_SOCCER_SUMMARY_SELECTORS,
 } from "./espn-v2-selectors";
 import {
@@ -113,6 +114,11 @@ export async function preflightEspnBeforeRegister(
 
   if (sportKey === "soccer") {
     await assertSoccerSummaryStructure(urls.summaryUrl);
+    await assertSelectorsPresent(
+      urls.summaryUrl,
+      { ...ESPN_SOCCER_SUMMARY_FINAL_SELECTORS },
+      "summary final scores",
+    );
   }
 }
 
@@ -132,7 +138,11 @@ export async function assertEspnSettlementSelectorsResolvable(
     "scoreboard",
   );
   if (sportKey === "soccer") {
-    await assertSelectorsPresent(urls.summaryUrl, { ...ESPN_SOCCER_SUMMARY_SELECTORS }, "summary");
+    await assertSelectorsPresent(
+      urls.summaryUrl,
+      { ...ESPN_SOCCER_SUMMARY_FINAL_SELECTORS, ...ESPN_SOCCER_SUMMARY_SELECTORS },
+      "summary",
+    );
   } else if (sportKey === "basketball" || sportKey === "american_football") {
     await assertSelectorsPresent(
       urls.scoreboardUrl,

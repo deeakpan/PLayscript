@@ -28,6 +28,10 @@ contract PlayscriptKernel {
     /// @notice Minimum native per `createRequest` (0.12 SOMI). JSON API often bills ~0.12 while `getRequestDeposit()` is lower.
     uint256 public constant MIN_AGENT_NATIVE_WEI = 120_000_000_000_000_000;
 
+    /// @dev Soccer final scores on summary `header` (scoreboard event URLs often time out on Somnia agents).
+    string private constant SOC_HDR_HOME_SCORE = "header.competitions[0].competitors[0].score";
+    string private constant SOC_HDR_AWAY_SCORE = "header.competitions[0].competitors[1].score";
+
     enum MatchState {
         OPEN,
         LOCKED,
@@ -496,9 +500,28 @@ contract PlayscriptKernel {
         if (block.timestamp < uint256(m.kickoff) + uint256(m.finalizeDelaySec)) revert BadTime();
         if (m.state != MatchState.LOCKED) revert BadState();
 
+        uint16 requiredMask = _requiredFetchMask(m.sport);
+        if (m.fetchMask == requiredMask) {
+            _finalizeSettlement(matchId, m);
+            return;
+        }
+
         uint256 dep = _perAgentDeposit();
         uint8 n = _fetchFieldCount(m.sport);
-        uint256 need = dep * n;
+        uint8 pending = 0;
+        for (uint8 f = 1; f <= n; ++f) {
+            if ((m.fetchMask & uint16(1 << (f - 1))) == 0) {
+                unchecked {
+                    ++pending;
+                }
+            }
+        }
+        if (pending == 0) {
+            _finalizeSettlement(matchId, m);
+            return;
+        }
+
+        uint256 need = dep * uint256(pending);
 
         if (msgValue >= need) {
             if (msgValue > need) {
@@ -514,7 +537,9 @@ contract PlayscriptKernel {
         emit ResolutionStarted(matchId, block.timestamp);
 
         for (uint8 f = 1; f <= n; ++f) {
-            _requestSettleField(matchId, f, dep);
+            if ((m.fetchMask & uint16(1 << (f - 1))) == 0) {
+                _requestSettleField(matchId, f, dep);
+            }
         }
     }
 
@@ -547,9 +572,8 @@ contract PlayscriptKernel {
     {
         Sport sport = m.sport;
         if (sport == Sport.Soccer) {
-            if (field <= 2) {
-                return (m.scoreboardUrl, field == 1 ? m.sel.homeScore : m.sel.awayScore);
-            }
+            if (field == 1) return (m.summaryUrl, SOC_HDR_HOME_SCORE);
+            if (field == 2) return (m.summaryUrl, SOC_HDR_AWAY_SCORE);
             if (field == 3) return (m.summaryUrl, m.sel.htHome);
             if (field == 4) return (m.summaryUrl, m.sel.htAway);
             if (field == 5) return (m.summaryUrl, m.sel.yellowHome);
@@ -586,9 +610,12 @@ contract PlayscriptKernel {
 
     function _abortSettleFetch(Match storage m, uint256 matchId, uint8 field, ResponseStatus status) internal {
         m.settleInProgress = false;
-        m.fetchMask = 0;
         m.state = MatchState.LOCKED;
         emit MatchSettleFetchFailed(matchId, field, status);
+        if (m.fetchMask == _requiredFetchMask(m.sport)) {
+            _finalizeSettlement(matchId, m);
+            return;
+        }
         _scheduleSettleRetry(matchId, field, status);
     }
 

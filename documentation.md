@@ -24,6 +24,18 @@ Living doc for **Somnia Agents** issues and fixes. Add sections as you discover 
 
 ---
 
+## ESPN settlement: agent `TimedOut` (not bad JSON paths)
+
+**Symptom:** `MatchSettleFetchFailed` with `status=TimedOut`, especially **field 1** (home score) on `…/scoreboard/{eventId}`. Off-chain `pickJsonPath` resolves all 8 fields; match stays `LOCKED` / `RESOLVING` with partial `fetchMask`.
+
+**Cause:** Somnia JSON API agents hit their default timeout on ESPN **scoreboard** URLs. Summary URLs for the same event usually succeed.
+
+**Fix (kernel):** Soccer final scores (fields 1–2) fetch from **`summaryUrl`** + `header.competitions[0].competitors[n].score`. Keep partial `fetchMask` on failure and only re-request missing fields. **Host:** dedupe `scheduleSettleRetry` and clear millis map entries after firing.
+
+**Diagnose:** `npx hardhat run scripts/diagnose-settle-failures.ts --network somnia` with `READ_MATCH_ID=0`.
+
+---
+
 ## Reference — price oracle demos
 
 Root `scripts/` only ships **Playscript v2** deploy scripts. For Somnia agent deploy/invoke flows, use **`somnia-agents-examples/`** (e.g. `01-price-oracle/scripts/`).
