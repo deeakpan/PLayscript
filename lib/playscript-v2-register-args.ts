@@ -114,11 +114,8 @@ export async function preflightEspnBeforeRegister(
 
   if (sportKey === "soccer") {
     await assertSoccerSummaryStructure(urls.summaryUrl);
-    await assertSelectorsPresent(
-      urls.summaryUrl,
-      { ...ESPN_SOCCER_SUMMARY_FINAL_SELECTORS },
-      "summary final scores",
-    );
+    // Final scores on summary `header` are often empty pre-kickoff; checked at settlement
+    // via `assertEspnSettlementSelectorsResolvable` (finished game) and on-chain agents.
   }
 }
 

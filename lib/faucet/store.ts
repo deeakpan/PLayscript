@@ -15,6 +15,18 @@ export type FaucetStoreFile = {
 
 const DEFAULT_PATH = path.join(/* turbopackIgnore: true */ process.cwd(), "data", "faucet-claims.json");
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __playscriptFaucetStore: FaucetStoreFile | undefined;
+}
+
+function memoryStore(): FaucetStoreFile {
+  if (!globalThis.__playscriptFaucetStore) {
+    globalThis.__playscriptFaucetStore = { claims: {} };
+  }
+  return globalThis.__playscriptFaucetStore;
+}
+
 function storePath(): string {
   const custom = process.env.FAUCET_DATA_PATH?.trim();
   return custom || DEFAULT_PATH;
@@ -31,7 +43,7 @@ function withStoreLock<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
-async function readStore(): Promise<FaucetStoreFile> {
+async function readFileStore(): Promise<FaucetStoreFile> {
   try {
     const raw = await fs.readFile(storePath(), "utf8");
     const parsed = JSON.parse(raw) as FaucetStoreFile;
@@ -46,10 +58,26 @@ async function readStore(): Promise<FaucetStoreFile> {
   }
 }
 
+/** Merge file + in-process cache (helps warm serverless instances). */
+async function readStore(): Promise<FaucetStoreFile> {
+  const [file, mem] = await Promise.all([readFileStore(), Promise.resolve(memoryStore())]);
+  const claims: Record<string, FaucetClaimRecord> = { ...file.claims };
+  for (const [addr, rec] of Object.entries(mem.claims)) {
+    const existing = claims[addr];
+    if (!existing || rec.updatedAt > existing.updatedAt) {
+      claims[addr] = rec;
+    }
+  }
+  return { claims };
+}
+
 async function writeStore(store: FaucetStoreFile): Promise<void> {
+  memoryStore().claims = { ...store.claims };
   const file = storePath();
   await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.writeFile(file, `${JSON.stringify(store, null, 2)}\n`, "utf8");
+  const tmp = `${file}.tmp`;
+  await fs.writeFile(tmp, `${JSON.stringify(store, null, 2)}\n`, "utf8");
+  await fs.rename(tmp, file);
 }
 
 export type FaucetEligibility = {
@@ -80,12 +108,12 @@ export async function readFaucetEligibility(addressLower: string): Promise<Fauce
   return getFaucetEligibility(store, addressLower);
 }
 
-/** Reserve today's claim slot, then caller mints; rolls back if `onMint` throws. */
+/** Reserve today's slot before mint; roll back if mint fails. */
 export async function runFaucetClaim(
   addressLower: string,
   onMint: () => Promise<{ txHash: string }>,
 ): Promise<
-  | { ok: true; txHash: string; lastClaimDay: string }
+  | { ok: true; txHash: string; lastClaimDay: string; nextClaimAt: null }
   | { ok: false; code: "already_claimed"; nextClaimAt: string }
 > {
   return withStoreLock(async () => {
@@ -100,15 +128,29 @@ export async function runFaucetClaim(
       };
     }
 
-    const { txHash } = await onMint();
-
+    const reservedAt = new Date().toISOString();
     store.claims[addressLower] = {
       lastClaimDay: today,
-      updatedAt: new Date().toISOString(),
-      lastTxHash: txHash,
+      updatedAt: reservedAt,
     };
     await writeStore(store);
 
-    return { ok: true, txHash, lastClaimDay: today };
+    try {
+      const { txHash } = await onMint();
+      store.claims[addressLower] = {
+        lastClaimDay: today,
+        updatedAt: new Date().toISOString(),
+        lastTxHash: txHash,
+      };
+      await writeStore(store);
+      return { ok: true, txHash, lastClaimDay: today, nextClaimAt: null };
+    } catch (e) {
+      const rollback = await readStore();
+      if (rollback.claims[addressLower]?.updatedAt === reservedAt) {
+        delete rollback.claims[addressLower];
+        await writeStore(rollback);
+      }
+      throw e;
+    }
   });
 }

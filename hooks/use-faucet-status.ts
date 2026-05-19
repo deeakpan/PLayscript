@@ -12,13 +12,19 @@ export type FaucetStatusData = {
   decimals: number;
 };
 
-export function useFaucetStatus() {
+export const FAUCET_STATUS_QUERY_KEY = "faucet-status";
+
+export function faucetStatusQueryKey(address: string | undefined) {
+  return [FAUCET_STATUS_QUERY_KEY, address ?? null] as const;
+}
+
+export function useFaucetStatus(enabled = true) {
   const { address, status } = useConnection();
   const connected = status === "connected";
 
   return useQuery({
-    queryKey: ["faucet-status", address ?? null],
-    enabled: connected && !!address,
+    queryKey: faucetStatusQueryKey(address),
+    enabled: enabled && connected && !!address,
     queryFn: async (): Promise<FaucetStatusData> => {
       const res = await fetch(
         `/api/faucet/status?address=${encodeURIComponent(address!)}`,
@@ -46,7 +52,7 @@ export function useFaucetStatus() {
         decimals: j.decimals ?? 18,
       };
     },
-    staleTime: 15_000,
-    refetchInterval: 30_000,
+    staleTime: 5_000,
+    refetchOnWindowFocus: true,
   });
 }

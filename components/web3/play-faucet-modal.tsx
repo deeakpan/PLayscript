@@ -1,12 +1,21 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
-import { type MouseEvent, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { type MouseEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { invalidatePlayBalance, usePlayBalance } from "@/hooks/use-play-balance";
-import { useFaucetStatus } from "@/hooks/use-faucet-status";
+import {
+  faucetStatusQueryKey,
+  useFaucetStatus,
+  type FaucetStatusData,
+} from "@/hooks/use-faucet-status";
 import { formatPlayAmount } from "@/lib/format-play-display";
+import { formatTryAgainIn } from "@/lib/faucet/format-retry";
+import {
+  patchFaucetStatusAfterClaim,
+  postFaucetClaim,
+  SOMNIA_EXPLORER_TX,
+} from "@/lib/faucet/client";
 
 type Props = {
   open: boolean;
@@ -14,14 +23,20 @@ type Props = {
   address: `0x${string}`;
 };
 
+type ClaimSuccess = {
+  txHash: string;
+  amountPlay: string;
+};
+
 export function PlayFaucetModal({ open, onClose, address }: Props) {
   const titleId = useId();
   const queryClient = useQueryClient();
-  const statusQ = useFaucetStatus();
+  const statusQ = useFaucetStatus(open);
   const balanceQ = usePlayBalance();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [okMsg, setOkMsg] = useState<string | null>(null);
+  const [success, setSuccess] = useState<ClaimSuccess | null>(null);
+  const openedOnce = useRef(false);
 
   const balanceWei = useMemo(() => {
     if (balanceQ.data) return balanceQ.data.raw;
@@ -31,13 +46,9 @@ export function PlayFaucetModal({ open, onClose, address }: Props) {
 
   const decimals = balanceQ.data?.decimals ?? statusQ.data?.decimals ?? 18;
 
-  const nextClaimLabel = useMemo(() => {
-    const at = statusQ.data?.nextClaimAt;
-    if (!at) return null;
-    const t = new Date(at).getTime();
-    if (!Number.isFinite(t) || t <= Date.now()) return null;
-    return formatDistanceToNow(new Date(at), { addSuffix: true });
-  }, [statusQ.data?.nextClaimAt]);
+  const canClaim = statusQ.isPending ? false : (statusQ.data?.canClaim ?? false);
+  const nextClaimAt = statusQ.data?.nextClaimAt ?? null;
+  const tryAgainIn = formatTryAgainIn(nextClaimAt);
 
   const onBackdrop = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
@@ -47,9 +58,21 @@ export function PlayFaucetModal({ open, onClose, address }: Props) {
   );
 
   useEffect(() => {
+    if (!open) {
+      openedOnce.current = false;
+      return;
+    }
+    if (!openedOnce.current) {
+      openedOnce.current = true;
+      setErr(null);
+      setSuccess(null);
+      void statusQ.refetch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only when modal opens
+  }, [open]);
+
+  useEffect(() => {
     if (!open) return;
-    setErr(null);
-    setOkMsg(null);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !busy) onClose();
     };
@@ -59,28 +82,41 @@ export function PlayFaucetModal({ open, onClose, address }: Props) {
 
   const onClaim = async () => {
     setErr(null);
-    setOkMsg(null);
+    setSuccess(null);
     setBusy(true);
     try {
-      const res = await fetch("/api/faucet/claim", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address }),
-      });
-      const j = (await res.json()) as {
-        ok?: boolean;
-        error?: string;
-        amountPlay?: string;
-      };
-      if (!res.ok || !j.ok) {
-        throw new Error(j.error ?? `Claim failed (${res.status})`);
+      const result = await postFaucetClaim(address);
+
+      if (!result.ok) {
+        if (result.status === 429 || result.code === "already_claimed") {
+          queryClient.setQueryData<FaucetStatusData>(faucetStatusQueryKey(address), (prev) => {
+            const base: FaucetStatusData = prev ?? {
+              dailyAmountPlay: "100",
+              canClaim: true,
+              lastClaimDay: null,
+              nextClaimAt: null,
+              balance: "0",
+              decimals: 18,
+            };
+            return {
+              ...base,
+              canClaim: false,
+              nextClaimAt: result.nextClaimAt ?? base.nextClaimAt,
+            };
+          });
+          await statusQ.refetch();
+          return;
+        }
+        setErr(result.error);
+        return;
       }
-      setOkMsg(`Sent ${j.amountPlay ?? "100"} PLAY to your wallet.`);
-      await Promise.all([
-        statusQ.refetch(),
-        balanceQ.refetch(),
-        invalidatePlayBalance(queryClient),
-      ]);
+
+      setSuccess({ txHash: result.txHash, amountPlay: result.amountPlay });
+      queryClient.setQueryData<FaucetStatusData>(
+        faucetStatusQueryKey(address),
+        (prev) => patchFaucetStatusAfterClaim(prev, result.balance, result.decimals),
+      );
+      await Promise.all([statusQ.refetch(), balanceQ.refetch(), invalidatePlayBalance(queryClient)]);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Claim failed");
     } finally {
@@ -90,9 +126,8 @@ export function PlayFaucetModal({ open, onClose, address }: Props) {
 
   if (!open) return null;
 
-  const canClaim = statusQ.data?.canClaim ?? false;
   const daily = statusQ.data?.dailyAmountPlay ?? "100";
-  const claimDisabled = busy || statusQ.isPending || !canClaim;
+  const claimDisabled = busy || statusQ.isPending || !canClaim || !!success;
 
   return (
     <div
@@ -119,30 +154,47 @@ export function PlayFaucetModal({ open, onClose, address }: Props) {
             </p>
           </div>
 
+          {success ? (
+            <div className="mt-3" role="status">
+              <p className="text-sm text-[var(--foreground)]">
+                Sent {success.amountPlay} PLAY successfully.
+              </p>
+              {success.txHash ? (
+                <a
+                  href={`${SOMNIA_EXPLORER_TX}${success.txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-block max-w-full truncate font-mono text-xs text-emerald-400 underline-offset-2 hover:text-emerald-300 hover:underline"
+                >
+                  {success.txHash}
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!canClaim && !success && !statusQ.isPending ? (
+            <div
+              className="mt-3 rounded-lg border border-amber-500/25 bg-amber-950/20 px-3 py-2.5"
+              role="alert"
+            >
+              <p className="text-sm font-semibold text-amber-100/95">Already claimed!</p>
+              <p className="mt-1 text-xs text-amber-100/80">
+                {tryAgainIn ? `Try again in ${tryAgainIn}.` : "Try again after UTC midnight."}
+              </p>
+            </div>
+          ) : null}
+
           {statusQ.isError ? (
             <p className="mt-2 text-xs text-rose-300/95">
               {statusQ.error?.message ?? "Could not load faucet status."}
             </p>
           ) : null}
 
-          {!canClaim && !statusQ.isPending ? (
-            <p className="mt-2 text-xs text-[var(--muted)]">
-              Already claimed today.
-              {nextClaimLabel ? (
-                <>
-                  {" "}
-                  Next claim <span className="font-medium text-[var(--foreground)]">{nextClaimLabel}</span>.
-                </>
-              ) : null}
-            </p>
+          {err ? (
+            <div className="mt-3 rounded-lg border border-rose-500/30 bg-rose-950/25 px-3 py-2.5" role="alert">
+              <p className="text-sm font-semibold text-rose-100/95">{err}</p>
+            </div>
           ) : null}
-
-          {err ? <p className="mt-2 text-xs text-rose-300/95">{err}</p> : null}
-          {okMsg ? <p className="mt-2 text-xs text-emerald-300/95">{okMsg}</p> : null}
-
-          <p className="mt-3 truncate font-mono text-[10px] text-[var(--muted)]" title={address}>
-            {address}
-          </p>
 
           <div className="mt-4 flex gap-2 pb-1">
             <button
@@ -159,7 +211,7 @@ export function PlayFaucetModal({ open, onClose, address }: Props) {
               onClick={onClaim}
               className="flex-1 rounded-lg border border-[var(--accent)]/40 bg-[var(--surface-active)] py-2.5 text-sm font-semibold text-[var(--foreground)] hover:border-[var(--accent)]/55 disabled:cursor-not-allowed disabled:opacity-55"
             >
-              {busy ? "Claiming…" : canClaim ? "Claim" : "Claimed today"}
+              {busy ? "Claiming…" : success ? "Claimed" : canClaim ? "Claim" : "Claimed today"}
             </button>
           </div>
         </div>

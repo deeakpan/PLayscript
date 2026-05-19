@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAddress, isAddress } from "viem";
 
 import { FAUCET_DAILY_PLAY } from "@/lib/faucet/constants";
+import { alreadyClaimedMessage } from "@/lib/faucet/format-retry";
 import { mintFaucetPlay } from "@/lib/faucet/mint-play";
 import { runFaucetClaim } from "@/lib/faucet/store";
 import { getPlayTokenEnv } from "@/lib/playscript-public-env";
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           ok: false,
-          error: "You already claimed today. Come back after UTC midnight.",
+          error: alreadyClaimedMessage(result.nextClaimAt),
           code: result.code,
           nextClaimAt: result.nextClaimAt,
         },
