@@ -6,6 +6,7 @@ import { encodeFunctionData, formatUnits, maxUint256, parseUnits } from "viem";
 import { useConnection, usePublicClient, useWalletClient } from "wagmi";
 
 import { FixtureLockScriptModal } from "@/components/fixtures/fixture-lock-script-modal";
+import { PlayStakeField } from "@/components/play-stake-field";
 import { invalidatePlayBalance } from "@/hooks/use-play-balance";
 import { FixturePlayscriptInlineSpinner } from "@/components/fixtures/fixture-playscript-inline-spinner";
 import { somniaTestnet } from "@/lib/chains/somnia";
@@ -438,7 +439,7 @@ export function FixturePlayscriptV2Section({
       await queryClient.invalidateQueries({ queryKey: ["v2-fixture-script"] });
       await invalidatePlayBalance(queryClient);
       setLockModalOpen(false);
-      setOkMsg("Script locked. If you win after settlement, claim PLAY from this ticket.");
+      setOkMsg("Script locked. If your picks win after settlement, claim PLAY from your ticket below.");
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErr(msg.length > 260 ? `${msg.slice(0, 260)}…` : msg);
@@ -498,6 +499,8 @@ export function FixturePlayscriptV2Section({
       });
       await publicClient.waitForTransactionReceipt({ hash });
       await queryClient.invalidateQueries({ queryKey: ["v2-erc1155-position"] });
+      await queryClient.invalidateQueries({ queryKey: ["v2-fixture-script"] });
+      await queryClient.invalidateQueries({ queryKey: ["playscript-v2-user-scripts"] });
       await invalidatePlayBalance(queryClient);
       setOkMsg("Unwound — PLAY returned (match still OPEN).");
     } catch (e) {
@@ -542,7 +545,17 @@ export function FixturePlayscriptV2Section({
 
   if (matchId !== null) {
     if (hideLockForm) {
-      return null;
+      if (!okMsg && !err) return null;
+      return (
+        <section className="border-t border-[var(--border)] pt-4" aria-label="Lock script status">
+          {okMsg ? (
+            <p className="text-sm text-[var(--foreground)]" role="status">
+              {okMsg}
+            </p>
+          ) : null}
+          {err ? <p className="mt-2 text-sm text-rose-300/90">{err}</p> : null}
+        </section>
+      );
     }
 
     return (
@@ -562,27 +575,17 @@ export function FixturePlayscriptV2Section({
                 <p className="text-sm text-rose-300/90">Switch your wallet to Somnia Testnet.</p>
               ) : (
                 <>
-                  <label className="flex flex-col gap-1.5">
-                    <span className="text-xs font-medium text-[var(--muted)]">Stake ($PLAY)</span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={stakePlay}
-                      onChange={(e) => setStakePlay(e.target.value)}
+                  <PlayStakeField value={stakePlay} onChange={setStakePlay} disabled={busy} />
+                  {maxStakeWei !== null && maxStakeWei > BigInt(0) ? (
+                    <button
+                      type="button"
                       disabled={busy}
-                      className="rounded-lg border border-[var(--border)]/80 bg-[var(--background)]/80 px-3 py-2.5 text-sm tabular-nums text-[var(--foreground)] outline-none ring-[var(--accent)]/30 focus-visible:ring-2 disabled:opacity-50"
-                    />
-                    {maxStakeWei !== null && maxStakeWei > BigInt(0) ? (
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => setStakePlay(formatPlayAmount(maxStakeWei, decimals))}
-                        className="w-fit text-left text-[11px] text-[var(--accent)] underline-offset-2 hover:underline"
-                      >
-                        Max · {formatPlayAmount(maxStakeWei, decimals)} PLAY
-                      </button>
-                    ) : null}
-                  </label>
+                      onClick={() => setStakePlay(formatPlayAmount(maxStakeWei, decimals))}
+                      className="-mt-1 w-fit text-left text-[11px] text-[var(--accent)] underline-offset-2 hover:underline"
+                    >
+                      Max · {formatPlayAmount(maxStakeWei, decimals)} PLAY
+                    </button>
+                  ) : null}
 
                   {lockQuoteQ.isPending ? (
                     <p className="text-xs text-[var(--muted)]">Updating estimate…</p>

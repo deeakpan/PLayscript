@@ -3,9 +3,16 @@ import { formatUnits, getAddress, isAddress } from "viem";
 
 import { fetchEspnFixtureByEventId } from "@/lib/espn-fixtures";
 import { describeV2LegMaskPicks } from "@/lib/playscript-v2-legs";
-import { getPlayscriptV2KernelEnv, getPlayscriptV2LockRegistryEnv } from "@/lib/playscript-public-env";
+import {
+  getPlayscriptV2KernelEnv,
+  getPlayscriptV2LockRegistryEnv,
+  getPlayscriptV2PositionsEnv,
+} from "@/lib/playscript-public-env";
+import { readV2LocksWithBalances } from "@/lib/playscript-v2-active-locks";
 import { fetchV2UserLocksFromRegistry } from "@/lib/playscript-v2-lock-registry-read";
 import { readKernelMatch } from "@/lib/playscript-v2-kernel-read";
+import { playscriptV2PositionsReadAbi } from "@/lib/playscript-v2-positions-abi";
+import { v2ScriptTokenId } from "@/lib/playscript-v2-script-token-id";
 import { sportIndexToKey } from "@/lib/playscript-unpack-picks";
 import { fetchFixtureByEventId } from "@/lib/thesportsdb-fixtures";
 import { parseLookupeventIdFromUrl } from "@/lib/thesportsdb-url-public";
@@ -93,15 +100,25 @@ async function resolveTeams(
 async function buildScriptsFromRegistry(owner: `0x${string}`, decimals: number): Promise<ScriptRow[]> {
   const registryEnv = getPlayscriptV2LockRegistryEnv();
   const kernelEnv = getPlayscriptV2KernelEnv();
+  const positionsEnv = getPlayscriptV2PositionsEnv();
   if (!registryEnv.ok) {
     throw new Error(registryEnv.reason);
   }
   if (!kernelEnv.ok) {
     throw new Error(kernelEnv.reason);
   }
+  if (!positionsEnv.ok) {
+    throw new Error(positionsEnv.reason);
+  }
 
-  const locks = await fetchV2UserLocksFromRegistry(registryEnv.lockRegistry, owner);
   const client = createSomniaPublicClient();
+  const allLocks = await fetchV2UserLocksFromRegistry(registryEnv.lockRegistry, owner);
+  const locks = await readV2LocksWithBalances(
+    client,
+    positionsEnv.positions,
+    owner,
+    allLocks,
+  );
   const scripts: ScriptRow[] = [];
 
   for (let i = 0; i < locks.length; i++) {
@@ -156,8 +173,12 @@ async function buildScriptsFromRegistry(owner: `0x${string}`, decimals: number):
 
 async function buildScriptsFromSubgraph(owner: `0x${string}`, decimals: number): Promise<ScriptRow[]> {
   const subgraphUrl = getPlayscriptV2SubgraphUrl();
+  const positionsEnv = getPlayscriptV2PositionsEnv();
   if (!subgraphUrl) {
     throw new Error("Set NEXT_PUBLIC_PLAYSCRIPT_V2_SUBGRAPH_URL to the deployed subgraph endpoint.");
+  }
+  if (!positionsEnv.ok) {
+    throw new Error(positionsEnv.reason);
   }
 
   const history = await fetchV2UserScriptHistory(subgraphUrl, owner);
@@ -166,16 +187,25 @@ async function buildScriptsFromSubgraph(owner: `0x${string}`, decimals: number):
     claimByMask.set(claimKey(c.matchId, c.legMask12), c);
   }
 
+  const client = createSomniaPublicClient();
   const scripts: ScriptRow[] = [];
 
   for (let i = 0; i < history.locks.length; i++) {
     const lock = history.locks[i] as V2SubgraphLockRow;
+    const claimed = claimByMask.has(claimKey(lock.matchId, lock.legMask12));
+    const tokenId = v2ScriptTokenId(BigInt(lock.matchId), lock.legMask12);
+    const balance = await client.readContract({
+      address: positionsEnv.positions,
+      abi: playscriptV2PositionsReadAbi,
+      functionName: "balanceOf",
+      args: [owner, tokenId],
+    });
+    if (balance <= BigInt(0) && !claimed) continue;
     if (i > 0) await new Promise((r) => setTimeout(r, 120));
     const claim = claimByMask.get(claimKey(lock.matchId, lock.legMask12));
     const teams = await resolveTeams(lock.match.url);
     const sportKey = sportIndexToKey(lock.match.sport);
     const fixtureSeed = teams.eventId ?? lock.matchId;
-    const client = createSomniaPublicClient();
     const kernelEnv = getPlayscriptV2KernelEnv();
     let registeredLegKinds: readonly number[] | undefined;
     if (kernelEnv.ok) {

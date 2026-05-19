@@ -14,8 +14,8 @@ import { playscriptV2SubgraphIndexingMessage } from "@/lib/playscript-v2-subgrap
 import { usePlayscriptUserScripts, type UserScriptListRow } from "@/hooks/use-playscript-user-scripts";
 import { ALL_LEAGUES_ID, buildFixtureDetailHref } from "@/lib/fixtures-shared";
 import { getPlayscriptClientEnv } from "@/lib/playscript-public-env";
-import { describeV2LegMaskPicks, difficultyLabel } from "@/lib/playscript-v2-legs";
 import { sportIndexToKey } from "@/lib/playscript-unpack-picks";
+import { formatUnits } from "viem";
 import { SCRIPT_SPORT_TITLES } from "@/lib/script-slots";
 
 import { ConnectWallet } from "@/components/web3/connect-wallet";
@@ -39,6 +39,43 @@ function statusClass(claimed: boolean, matchSettled: boolean): string {
   return "bg-amber-500/15 text-amber-200 ring-amber-500/25";
 }
 
+function v2PayoutDisplay(s: V2UserScriptListRow): { label: string; amount: string } {
+  if (s.claimed && s.payoutFormatted) {
+    return { label: "Payout", amount: s.payoutFormatted };
+  }
+  const wei = (BigInt(s.netStake) * BigInt(s.payoutRate)) / BigInt(10);
+  return { label: "Potential payout", amount: formatUnits(wei, 18) };
+}
+
+function ScriptStakeFooter({
+  stakeAmount,
+  payoutLabel,
+  payoutAmount,
+}: {
+  stakeAmount: string;
+  payoutLabel: string;
+  payoutAmount: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Stake</p>
+        <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums text-[var(--accent)]">
+          {stakeAmount} PLAY
+        </p>
+      </div>
+      <div className="text-right">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+          {payoutLabel}
+        </p>
+        <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums text-emerald-300/95">
+          {payoutAmount} PLAY
+        </p>
+      </div>
+    </div>
+  );
+}
+
 const cardClassName =
   "block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[border-color,box-shadow] hover:border-[var(--accent)]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]";
 
@@ -47,7 +84,6 @@ function ScriptCardShell({
   cardKey,
   title,
   sportTitle,
-  matchId,
   statusLabel,
   claimed,
   matchSettled,
@@ -57,7 +93,6 @@ function ScriptCardShell({
   cardKey: string;
   title: string;
   sportTitle: string;
-  matchId: string;
   statusLabel: string;
   claimed: boolean;
   matchSettled: boolean;
@@ -68,7 +103,6 @@ function ScriptCardShell({
       <ScriptCardHeader
         title={title}
         sportTitle={sportTitle}
-        matchId={matchId}
         statusLabel={statusLabel}
         claimed={claimed}
         matchSettled={matchSettled}
@@ -93,14 +127,12 @@ function ScriptCardShell({
 function ScriptCardHeader({
   title,
   sportTitle,
-  matchId,
   statusLabel,
   claimed,
   matchSettled,
 }: {
   title: string;
   sportTitle: string;
-  matchId: string;
   statusLabel: string;
   claimed: boolean;
   matchSettled: boolean;
@@ -109,11 +141,7 @@ function ScriptCardHeader({
     <div className="flex items-start justify-between gap-3 px-4 py-3.5">
       <div className="min-w-0 flex-1">
         <p className="truncate text-base font-semibold tracking-tight text-[var(--foreground)]">{title}</p>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          {sportTitle}
-          <span className="text-[var(--border)]"> · </span>
-          match <span className="font-mono tabular-nums text-[var(--foreground)]/90">#{matchId}</span>
-        </p>
+        <p className="mt-1 text-xs text-[var(--muted)]">{sportTitle}</p>
       </div>
       <span
         className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${statusClass(
@@ -147,23 +175,17 @@ function ScriptsV1List({ rows }: { rows: UserScriptListRow[] }) {
             fixtureHref={fixtureHref}
             title={title}
             sportTitle={sportTitle}
-            matchId={s.matchId}
             statusLabel={statusLabel}
             claimed={s.claimed}
             matchSettled={s.matchSettled}
             footer={
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
-                <span>
-                  stake{" "}
-                  <span className="font-mono font-semibold tabular-nums text-[var(--accent)]">
-                    {s.stakeFormatted} $PLAY
-                  </span>
-                </span>
-                <span className="hidden sm:inline text-[var(--border)]">·</span>
-                <span>
-                  script{" "}
-                  <span className="font-mono tabular-nums text-[var(--foreground)]/90">{s.scriptId}</span>
-                </span>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Stake
+                </p>
+                <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums text-[var(--accent)]">
+                  {s.stakeFormatted} PLAY
+                </p>
               </div>
             }
           />
@@ -185,20 +207,7 @@ function ScriptsV2List({ rows }: { rows: V2UserScriptListRow[] }) {
             ? buildFixtureDetailHref(s.eventId, ALL_LEAGUES_ID, s.sourceLeagueId)
             : null;
         const statusLabel = s.claimed ? "Claimed" : s.matchSettled ? "Settled" : "Open";
-        const picks =
-          s.pickDescriptions.length > 0
-            ? s.pickDescriptions
-            : describeV2LegMaskPicks(
-                s.eventId ?? s.matchId,
-                s.homeTeam,
-                s.awayTeam,
-                sportKey,
-                s.legMask12,
-              ).map((p) => ({
-                legId: p.legId,
-                description: p.description,
-                difficulty: p.difficulty,
-              }));
+        const payout = v2PayoutDisplay(s);
 
         return (
           <ScriptCardShell
@@ -207,47 +216,15 @@ function ScriptsV2List({ rows }: { rows: V2UserScriptListRow[] }) {
             fixtureHref={fixtureHref}
             title={title}
             sportTitle={sportTitle}
-            matchId={s.matchId}
             statusLabel={statusLabel}
             claimed={s.claimed}
             matchSettled={s.matchSettled}
             footer={
-              <div className="space-y-2.5">
-                <ul className="space-y-1.5 text-xs leading-snug text-[var(--foreground)]">
-                  {picks.map((pick) => (
-                    <li key={pick.legId} className="flex gap-2">
-                      <span className="mt-0.5 shrink-0 font-mono text-[10px] tabular-nums text-[var(--muted)]">
-                        {pick.legId}.
-                      </span>
-                      <span>
-                        {pick.description}
-                        <span className="ml-1.5 text-[10px] font-medium text-[var(--muted)]">
-                          ({difficultyLabel(pick.difficulty as "easy" | "medium" | "hard")})
-                        </span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
-                  <span>
-                    net stake{" "}
-                    <span className="font-mono font-semibold tabular-nums text-[var(--accent)]">
-                      {s.netStakeFormatted} $PLAY
-                    </span>
-                  </span>
-                  {s.claimed && s.payoutFormatted ? (
-                    <>
-                      <span className="hidden sm:inline text-[var(--border)]">·</span>
-                      <span>
-                        payout{" "}
-                        <span className="font-mono font-semibold tabular-nums text-emerald-300/95">
-                          {s.payoutFormatted} $PLAY
-                        </span>
-                      </span>
-                    </>
-                  ) : null}
-                </div>
-              </div>
+              <ScriptStakeFooter
+                stakeAmount={s.netStakeFormatted}
+                payoutLabel={payout.label}
+                payoutAmount={payout.amount}
+              />
             }
           />
         );
@@ -353,10 +330,8 @@ export function ScriptsPageContent() {
         <h1 className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
           My Scripts
         </h1>
-        <p className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-base text-[var(--muted)] sm:text-lg">
-          {useV2
-            ? "Lock history indexed from Playscript v2 (each row is a lock transaction)."
-            : "Review your locked scripts, stake amount, and settlement status."}
+        <p className="text-sm text-[var(--muted)] sm:text-base">
+          Tap a match for picks and actions.
         </p>
       </div>
       {useV2 ? <ScriptsV2List rows={rows as V2UserScriptListRow[]} /> : <ScriptsV1List rows={rows as UserScriptListRow[]} />}

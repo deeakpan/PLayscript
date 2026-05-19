@@ -93,8 +93,14 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
     ? deriveSlotOutcomesFromScore(homeScore, awayScore, fixture.sportKey)
     : null;
 
+  const isPreMatchPlaceholder =
+    kickoffOpen && hasLineScore && homeScore === 0 && awayScore === 0;
   const showScriptOutcomesBlock =
-    displayStatus !== "live" && hasLineScore && slotActuals !== null && slotActuals.length > 0;
+    displayStatus !== "live" &&
+    hasLineScore &&
+    slotActuals !== null &&
+    slotActuals.length > 0 &&
+    !isPreMatchPlaceholder;
   const showLiveStatsBlock = displayStatus === "live";
 
   const matchByUrl = usePlayscriptMatchByUrl(lookupeventUrl);
@@ -126,6 +132,12 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
     Boolean(outcomeGrading) &&
     slotActuals !== null &&
     outcomeGrading!.rows.length === slotActuals.length;
+
+  const scorelineSectionTitle = outcomeGrading
+    ? "Your script results"
+    : displayStatus === "finished"
+      ? "Result from scoreline"
+      : "Current score line";
 
   const claimModalData = useMemo(() => {
     const d = userScriptQ.data;
@@ -224,12 +236,17 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
       ) : null}
 
       {showScriptOutcomesBlock ? (
-        <section aria-label="Script slot outcomes from the scoreline">
+        <section aria-label={scorelineSectionTitle}>
           <div className="flex max-w-xl min-w-0 flex-row flex-wrap items-center gap-x-8 gap-y-3 sm:gap-x-10">
             <div className="min-w-0 max-w-sm flex-1 space-y-2.5">
               <h3 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
-                Script outcomes
+                {scorelineSectionTitle}
               </h3>
+              {!outcomeGrading && displayStatus !== "finished" ? (
+                <p className="text-xs leading-relaxed text-[var(--muted)]">
+                  Derived from the ESPN score line — not your Playscript v2 picks.
+                </p>
+              ) : null}
               <dl
                 className={`grid gap-x-4 gap-y-2.5 text-sm leading-snug ${
                   showOutcomeTicks ? "grid-cols-[5.5rem_1fr_1.25rem]" : "grid-cols-[5.5rem_1fr]"

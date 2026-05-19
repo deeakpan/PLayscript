@@ -110,6 +110,7 @@ export function FixtureV2LockedScript({ script, matchId, displayStatus }: Props)
       });
       await publicClient.waitForTransactionReceipt({ hash });
       await queryClient.invalidateQueries({ queryKey: ["v2-fixture-script"] });
+      await queryClient.invalidateQueries({ queryKey: ["playscript-v2-user-scripts"] });
       await invalidatePlayBalance(queryClient);
       setOkMsg("Position withdrawn.");
     } catch (e) {

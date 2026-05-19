@@ -2,7 +2,13 @@
 
 import type { ReactNode } from "react";
 
-import { getScriptSlots, SCRIPT_SLOT_PACKS_ORDER, SCRIPT_SPORT_TITLES } from "@/lib/script-slots";
+import {
+  difficultyLabel,
+  selectV2MarketLegs,
+  V2_LEG_COUNT,
+  V2_PICK_COUNT,
+} from "@/lib/playscript-v2-legs";
+import { SCRIPT_SLOT_PACKS_ORDER, SCRIPT_SPORT_TITLES } from "@/lib/script-slots";
 
 import { useHowItWorksScroll } from "@/components/how-it-works/how-it-works-scroll-context";
 import { HowItWorksTocPanel } from "@/components/how-it-works/how-it-works-toc-panel";
@@ -11,7 +17,7 @@ const SPORT_KEYS = SCRIPT_SLOT_PACKS_ORDER;
 
 function Prose({ children }: { children: ReactNode }) {
   return (
-    <div className="max-w-2xl space-y-3 text-sm leading-relaxed text-[var(--muted)] [&_strong]:font-semibold [&_strong]:text-emerald-400/85 [&_code]:rounded-md [&_code]:border [&_code]:border-[var(--border)]/80 [&_code]:bg-[var(--surface)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[11px] [&_code]:text-emerald-200/80">
+    <div className="max-w-2xl space-y-3 text-sm leading-relaxed text-[var(--muted)] [&_strong]:font-semibold [&_strong]:text-[var(--foreground)] [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5">
       {children}
     </div>
   );
@@ -45,6 +51,30 @@ function MajorSection({
   );
 }
 
+function ExampleCard({ children }: { children: ReactNode }) {
+  return (
+    <div className="max-w-2xl rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+        Example
+      </p>
+      <div className="mt-3 space-y-3 text-sm text-[var(--foreground)]">{children}</div>
+    </div>
+  );
+}
+
+function ExampleRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 border-b border-[var(--border)]/60 pb-2 last:border-0 last:pb-0">
+      <span className="text-[var(--muted)]">{label}</span>
+      <span
+        className={`font-mono text-sm font-semibold tabular-nums ${highlight ? "text-emerald-300/95" : "text-[var(--foreground)]"}`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export function HowItWorksView() {
   const { activeId } = useHowItWorksScroll();
 
@@ -66,170 +96,191 @@ export function HowItWorksView() {
           </h1>
           <Prose>
             <p>
-              <strong>Playscript</strong> is a <strong>PROTOCOL</strong> for sports scenarios: you choose
-              five outcomes before kickoff, stake <strong>$PLAY</strong>, and the same rules settle everyone
-              onchain. The app is a front-end to that protocol — match lists come from{" "}
-              <strong>TheSportsDB</strong>; final scores used for grading are whatever the PROTOCOL records
-              after <strong>settlement</strong> (see below).
+              <strong>Playscript</strong> lets you build a short prediction script on a real match:
+              choose <strong>five outcomes</strong> from the board, stake <strong>$PLAY</strong>, and
+              win if <strong>all five</strong> are right when the game is over.
+            </p>
+            <p>
+              Harder picks raise your <strong>payout multiplier</strong>. Easier picks lower it. You
+              see the multiplier before you lock in.
             </p>
           </Prose>
         </header>
 
         <SectionBreak />
 
-        <MajorSection id="tokens" title="$PLAY & stakes">
+        <MajorSection id="play" title="$PLAY & locking">
           <Prose>
             <p>
-              Stakes are in the <strong>PLAY</strong> token ($PLAY in the UI). Before your first lock, the
-              PROTOCOL needs a standard ERC-20 allowance to the core contract so it can pull your stake.
-              Amounts respect PLAY decimals onchain.
+              Stakes use the <strong>PLAY</strong> token (shown as $PLAY in the app). Use the{" "}
+              <strong>Faucet</strong> on testnet if you need tokens to try a script.
             </p>
             <p>
-              Your stake is locked until you <strong>claim</strong> after the match is settled: claiming
-              always moves your full stake to the PROTOCOL treasury; winners additionally receive newly
-              minted PLAY according to the tier you hit (see Payouts).
+              When you lock a script, your PLAY goes into the shared pool that pays winners. A small{" "}
+              <strong>0.5% lock fee</strong> is taken from the amount that actually locks (you see the
+              net stake on screen).
+            </p>
+            <p>
+              You need PLAY in your wallet and permission for the app to use it for that lock — the
+              wallet will ask you to confirm once.
             </p>
           </Prose>
         </MajorSection>
 
         <SectionBreak />
 
-        <MajorSection id="slots" title="Five slots">
+        <MajorSection id="build" title="Pick your five">
           <Prose>
             <p>
-              Each script has <strong>exactly five slots</strong>, in order. You complete all five and your
-              stake before kickoff. The PROTOCOL allows{" "}
-              <strong>one locked script per wallet per match</strong>.
+              Each match has a board of <strong>{V2_LEG_COUNT} markets</strong> (winner, goals, cards,
+              and more depending on the sport). You must pick <strong>exactly {V2_PICK_COUNT}</strong>{" "}
+              before you can lock.
+            </p>
+            <p>Each line is tagged <strong>Easy</strong>, <strong>Medium</strong>, or <strong>Hard</strong>:</p>
+            <ul>
+              <li>
+                <strong>Easy</strong> — more likely outcomes (e.g. a favourite to win).
+              </li>
+              <li>
+                <strong>Medium</strong> — balanced props (e.g. both teams score).
+              </li>
+              <li>
+                <strong>Hard</strong> — tougher calls (e.g. exact-margin or low-scoring lines).
+              </li>
+            </ul>
+            <p>
+              Your five choices are combined into one <strong>difficulty score</strong>. That score sets
+              your <strong>multiplier</strong> — from about <strong>1.8×</strong> up to about{" "}
+              <strong>20×</strong>. More hard picks in the mix → higher multiplier (and you must hit all
+              five to get paid).
             </p>
             <p>
-              Picks are packed into a single onchain value; you get a deterministic{" "}
-              <strong>choices receipt</strong> (hash) anyone can verify against <code>matchId</code>, sport,
-              and picks.
-            </p>
-            <p>
-              Think of the receipt as your script fingerprint: copy/share it to reopen the same match and
-              prefill the same 5 slots in the app, so another user can build a script with the exact same
-              options as the original owner (they only re-enter stake before locking). The receipt itself is
-              a hash, so it proves picks but does not expose your raw slot choices without the matching packed
-              picks data.
-            </p>
-            <p>
-              Slot wording and lines (totals, margins, etc.) depend on the match&apos;s sport — the same
-              five indices exist for every sport, but the questions and cutoffs change (see Sports).
+              Open any fixture to see the live board, build your script, and lock before kickoff. Tap a
+              row in <strong>My Scripts</strong> to reopen that match and see your picks.
             </p>
           </Prose>
         </MajorSection>
 
         <SectionBreak />
 
-        <MajorSection id="sports" title="How sports differ">
+        <MajorSection id="stake-example" title="Stake & multiplier">
           <Prose>
             <p>
-              The PROTOCOL stores a <strong>sport enum</strong> per match: football (soccer), basketball
-              (NBA ruleset), American football (NFL ruleset), baseball (MLB ruleset). That choice drives
-              which five-slot pack you see in the app and how each slot is graded against the final result.
+              The app shows your <strong>stake</strong> and <strong>potential payout</strong> when you
+              lock. Payout means: if every pick is correct, you receive stake × multiplier (from your
+              net stake after the lock fee).
+            </p>
+          </Prose>
+          <div className="mt-4 space-y-4">
+            <ExampleCard>
+              <p className="text-[var(--muted)]">
+                You lock <strong className="text-[var(--foreground)]">100 PLAY</strong> on a script
+                whose picks add up to a <strong className="text-[var(--foreground)]">7×</strong>{" "}
+                multiplier (a fairly mixed easy / medium / hard set).
+              </p>
+              <ExampleRow label="Amount you lock" value="100 PLAY" />
+              <ExampleRow label="Lock fee (0.5%)" value="0.5 PLAY" />
+              <ExampleRow label="Net stake (what counts)" value="99.5 PLAY" />
+              <ExampleRow label="Multiplier" value="7×" />
+              <ExampleRow label="Potential payout if you win" value="696.5 PLAY" highlight />
+            </ExampleCard>
+            <Prose>
+              <p>
+                The multiplier updates as you change picks. If the pool is nearly full, your lock might
+                use slightly less than you typed — any leftover PLAY is returned to your wallet.
+              </p>
+              <p>
+                This is not a bookmaker &quot;odds&quot; screen. It is the payout tied to{" "}
+                <strong>your</strong> five picks and the rules of the game: win only if{" "}
+                <strong>all five</strong> are correct.
+              </p>
+            </Prose>
+          </div>
+        </MajorSection>
+
+        <SectionBreak />
+
+        <MajorSection id="before-kickoff" title="Before kickoff">
+          <Prose>
+            <p>
+              Lock your script while the match is still <strong>open</strong> (before kickoff). After
+              that, your picks are fixed for that match.
             </p>
             <p>
-              Fixtures in the app are tagged with a sport so you only build scripts that match how that
-              league is wired onchain.
+              Changed your mind? Use <strong>Withdraw stake</strong> on the fixture page while the match
+              is still open. You get your PLAY back (minus the small lock fee you already paid). Your
+              picks are cleared for that match.
+            </p>
+            <p>
+              One active script per wallet per match — pick your five, lock once, or withdraw and try
+              again before kickoff.
             </p>
           </Prose>
         </MajorSection>
 
         <SectionBreak />
 
-        <MajorSection id="agent" title="Settlement & agent">
+        <MajorSection id="after-match" title="After the match">
           <Prose>
             <p>
-              After kickoff and a <strong>finalize delay</strong> defined per match, the match can be{" "}
-              <strong>settled</strong>. Settlement is not “someone typing the score in the app.” The
-              PROTOCOL issues parallel <strong>JSON API agent</strong> requests against the match&apos;s{" "}
-              <strong>TheSportsDB event URL</strong>, using stored selector paths (e.g. where home/away
-              scores live in that JSON). When every required field returns successfully, the PROTOCOL writes{" "}
-              <strong>final home and away numbers</strong> onchain and marks the match settled.
+              When the game finishes, the result is checked against your five picks. The app grades each
+              line as right or wrong.
+            </p>
+            <ul>
+              <li>
+                <strong>All five correct</strong> — you can <strong>Claim payout</strong>. PLAY is sent
+                to your wallet (stake × multiplier on your net stake).
+              </li>
+              <li>
+                <strong>Any pick wrong</strong> — no payout for that script. Your stake stays in the
+                pool.
+              </li>
+            </ul>
+            <p>
+              Settlement can take a short while after the final whistle. The fixture page will show when
+              your script is ready to claim.
             </p>
             <p>
-              Triggering settlement requires attaching the native <strong>gas/deposit</strong> the agent
-              platform charges for those reads (five requests). If any read fails, settlement does not
-              complete — the match stays unsettled until a successful retry path exists.
-            </p>
-            <p>
-              <strong>You</strong> don&apos;t run the agent by hand; you only need to know that{" "}
-              <strong>grading uses those onchain finals</strong>, not a third-party score widget in the
-              app.
-            </p>
-          </Prose>
-        </MajorSection>
-
-        <SectionBreak />
-
-        <MajorSection id="grading" title="Grading">
-          <Prose>
-            <p>
-              Once settled, each slot is checked against the official finals: winner, totals vs the line,
-              yes/no props, and (for football) exact score where applicable. You get a count of how many of
-              the five you got right — that count alone drives the payout tier, not a separate “ticket
-              price.”
-            </p>
-          </Prose>
-        </MajorSection>
-
-        <SectionBreak />
-
-        <MajorSection id="payouts" title="Payouts & claim">
-          <Prose>
-            <p>
-              After settlement, you call <strong>claim</strong> on the PROTOCOL for your script. On every
-              claim, your full stake is transferred to the treasury.
-            </p>
-            <p>
-              If you had <strong>3, 4, or 5</strong> slots correct, the PROTOCOL also <strong>mints</strong>{" "}
-              PLAY to you and a small mint fee to the treasury: effectively <strong>about 1.2×</strong>,{" "}
-              <strong>1.8×</strong>, or <strong>3×</strong> your stake as the gross mint pool for 3/5, 4/5,
-              and 5/5 respectively (before the mint fee slice). <strong>Below 3/5</strong> there is no mint
-              — you still claim so the stake path completes; you simply receive no extra PLAY for that
-              script.
-            </p>
-          </Prose>
-        </MajorSection>
-
-        <SectionBreak />
-
-        <MajorSection id="odds" title="What “odds” means here">
-          <Prose>
-            <p>
-              The app may show <strong>illustrative</strong> amounts when you type a stake — those are{" "}
-              <strong>not bookmaker odds</strong>. They are rough multipliers so you can picture 4/5 vs 5/5
-              under PROTOCOL rules. Edge cases, rounding, and the mint fee are defined by the contract, not
-              the preview text.
+              <strong>Vaults</strong> (in the app menu) are for people who supply PLAY liquidity to the
+              pool — separate from playing a script on a match.
             </p>
           </Prose>
         </MajorSection>
 
         {SPORT_KEYS.map((sportKey) => {
-          const slots = getScriptSlots(sportKey);
+          const legs = selectV2MarketLegs("how-it-works", "Home", "Away", sportKey);
           const title = SCRIPT_SPORT_TITLES[sportKey];
           return (
             <div key={sportKey}>
               <SectionBreak />
               <section id={`sport-${sportKey}`} className="scroll-mt-24 space-y-6">
                 <h2 className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-xl font-semibold tracking-tight text-[var(--foreground)] sm:text-2xl">
-                  {title}
+                  {title} markets
                 </h2>
                 <p className="max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-                  Five slots for this pack. Each line is graded against settled finals — same order as in
-                  the script builder.
+                  Example board for this sport — team names on a real fixture will match that game. Pick{" "}
+                  {V2_PICK_COUNT} from {V2_LEG_COUNT} on the match page.
                 </p>
                 <div className="max-w-2xl divide-y divide-[var(--border)]/90">
-                  {slots.map((s) => (
-                    <div key={s.anchor} id={s.anchor} className="scroll-mt-24 py-4 first:pt-0">
-                      <h3 className="font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-lg font-semibold tracking-tight text-[var(--foreground)]">
-                        <span className="mr-2 font-mono text-sm tabular-nums text-[var(--accent)]">
-                          {s.index}.
+                  {legs.map((leg) => (
+                    <div key={leg.id} className="flex items-start justify-between gap-3 py-3 first:pt-0">
+                      <p className="min-w-0 flex-1 text-sm leading-snug text-[var(--foreground)]">
+                        <span className="mr-2 font-mono text-xs tabular-nums text-[var(--accent)]">
+                          {leg.id}.
                         </span>
-                        {s.title}
-                      </h3>
-                      <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted)]">{s.outcomes}</p>
+                        {leg.description}
+                      </p>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset ${
+                          leg.difficulty === "easy"
+                            ? "bg-emerald-500/15 text-emerald-200/95 ring-emerald-500/25"
+                            : leg.difficulty === "medium"
+                              ? "bg-amber-500/12 text-amber-100/90 ring-amber-500/22"
+                              : "bg-rose-500/12 text-rose-100/90 ring-rose-500/22"
+                        }`}
+                      >
+                        {difficultyLabel(leg.difficulty)}
+                      </span>
                     </div>
                   ))}
                 </div>

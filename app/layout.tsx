@@ -23,26 +23,22 @@ const fontSyne = Syne({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-const metadataBase: URL | undefined =
+const metadataBase = new URL(
   siteUrl && siteUrl.length > 0
-    ? new URL(siteUrl)
+    ? siteUrl
     : process.env.VERCEL_URL
-      ? new URL(`https://${process.env.VERCEL_URL}`)
-      : undefined;
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000",
+);
 
 export const metadata: Metadata = {
-  ...(metadataBase ? { metadataBase } : {}),
+  metadataBase,
   title: {
     default: "Playscript | Agentic Sports Prediction Markets",
     template: "%s | Playscript",
   },
   description:
     "Agentic sports prediction markets — decentralized scenario plays settled with onchain agents.",
-  icons: {
-    icon: [{ url: "/playscript_logo.png", type: "image/png" }],
-    apple: [{ url: "/playscript_logo.png", type: "image/png" }],
-    shortcut: "/playscript_logo.png",
-  },
 };
 
 export default function RootLayout({
