@@ -6,7 +6,7 @@ import { encodeFunctionData, formatUnits, isAddress, maxUint256, parseUnits } fr
 import { useConnection, usePublicClient, useWalletClient } from "wagmi";
 
 import { somniaTestnet } from "@/lib/chains/somnia";
-import { sendWalletTx } from "@/lib/send-wallet-tx";
+import { FALLBACK_GAS_APPROVE, sendWalletTx } from "@/lib/send-wallet-tx";
 import { playVaultReadAbi, playVaultWriteAbi } from "@/lib/play-vault-abi";
 import { playTokenReadAbi, playTokenWriteAbi } from "@/lib/playscript-onchain-abi";
 import { invalidatePlayBalance } from "@/hooks/use-play-balance";
@@ -250,7 +250,7 @@ function VaultDetailViewInner({ vaultAddress }: Props) {
           functionName: "approve",
           args: [vaultAddress, maxUint256],
         }),
-        fallbackGas: 120_000n,
+        fallbackGas: FALLBACK_GAS_APPROVE,
       });
       await publicClient.waitForTransactionReceipt({ hash });
       setOk("PLAY approved for vault.");

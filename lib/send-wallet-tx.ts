@@ -8,11 +8,11 @@ import type {
 } from "viem";
 
 /** Extra headroom — mobile wallets / Somnia RPC often under-estimate. */
-const GAS_BUFFER_NUM = 140n;
-const GAS_BUFFER_DEN = 100n;
+const GAS_BUFFER_NUM = BigInt(140);
+const GAS_BUFFER_DEN = BigInt(100);
 
-const FALLBACK_GAS_APPROVE = 120_000n;
-const FALLBACK_GAS_CONTRACT = 600_000n;
+export const FALLBACK_GAS_APPROVE = BigInt(120_000);
+export const FALLBACK_GAS_CONTRACT = BigInt(600_000);
 
 export type SendWalletTxParams = {
   walletClient: WalletClient;
@@ -28,7 +28,7 @@ export type SendWalletTxParams = {
 
 function bufferGas(gas: bigint): bigint {
   const buffered = (gas * GAS_BUFFER_NUM) / GAS_BUFFER_DEN;
-  return buffered < 21_000n ? 21_000n : buffered;
+  return buffered < BigInt(21_000) ? BigInt(21_000) : buffered;
 }
 
 function isApproveCalldata(data: Hex): boolean {
@@ -55,35 +55,34 @@ async function estimateGasLimit(
   }
 }
 
-async function resolveFees(
-  publicClient: PublicClient,
-): Promise<
+type FeeFields =
   | { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
   | { gasPrice: bigint }
-  | Record<string, never>
-> {
+  | null;
+
+async function resolveFees(publicClient: PublicClient): Promise<FeeFields> {
   try {
     const fees = await publicClient.estimateFeesPerGas();
     if (fees.maxFeePerGas != null) {
-      const maxFeePerGas = (fees.maxFeePerGas * 125n) / 100n;
+      const maxFeePerGas = (fees.maxFeePerGas * BigInt(125)) / BigInt(100);
       const maxPriorityFeePerGas =
         fees.maxPriorityFeePerGas != null
-          ? (fees.maxPriorityFeePerGas * 125n) / 100n
-          : maxFeePerGas / 10n;
+          ? (fees.maxPriorityFeePerGas * BigInt(125)) / BigInt(100)
+          : maxFeePerGas / BigInt(10);
       return { maxFeePerGas, maxPriorityFeePerGas };
     }
     if (fees.gasPrice != null) {
-      return { gasPrice: (fees.gasPrice * 125n) / 100n };
+      return { gasPrice: (fees.gasPrice * BigInt(125)) / BigInt(100) };
     }
   } catch {
     try {
       const gasPrice = await publicClient.getGasPrice();
-      return { gasPrice: (gasPrice * 125n) / 100n };
+      return { gasPrice: (gasPrice * BigInt(125)) / BigInt(100) };
     } catch {
-      return {};
+      return null;
     }
   }
-  return {};
+  return null;
 }
 
 /**
@@ -97,7 +96,7 @@ export async function sendWalletTx({
   chain,
   to,
   data,
-  value = 0n,
+  value = BigInt(0),
   fallbackGas,
 }: SendWalletTxParams): Promise<Hash> {
   const gas = await estimateGasLimit(
@@ -106,14 +105,20 @@ export async function sendWalletTx({
     fallbackGas,
   );
   const fees = await resolveFees(publicClient);
+  const base = { chain, account, to, data, value, gas };
 
-  return walletClient.sendTransaction({
-    chain,
-    account,
-    to,
-    data,
-    value,
-    gas,
-    ...fees,
-  });
+  if (fees && "maxFeePerGas" in fees) {
+    return walletClient.sendTransaction({
+      ...base,
+      maxFeePerGas: fees.maxFeePerGas,
+      maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
+    });
+  }
+  if (fees && "gasPrice" in fees) {
+    return walletClient.sendTransaction({
+      ...base,
+      gasPrice: fees.gasPrice,
+    });
+  }
+  return walletClient.sendTransaction(base);
 }

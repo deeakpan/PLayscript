@@ -10,7 +10,7 @@ import { PlayStakeField } from "@/components/play-stake-field";
 import { invalidatePlayBalance } from "@/hooks/use-play-balance";
 import { FixturePlayscriptInlineSpinner } from "@/components/fixtures/fixture-playscript-inline-spinner";
 import { somniaTestnet } from "@/lib/chains/somnia";
-import { sendWalletTx } from "@/lib/send-wallet-tx";
+import { FALLBACK_GAS_APPROVE, sendWalletTx } from "@/lib/send-wallet-tx";
 import type { ScriptSportKey } from "@/lib/fixtures-shared";
 import {
   getPlayscriptV2KernelEnv,
@@ -429,7 +429,7 @@ export function FixturePlayscriptV2Section({
             functionName: "approve",
             args: [positionsEnv.positions, maxUint256],
           }),
-          fallbackGas: 120_000n,
+          fallbackGas: FALLBACK_GAS_APPROVE,
         });
         await publicClient.waitForTransactionReceipt({ hash: hashA });
       }

@@ -7,7 +7,7 @@ import { useConnection, usePublicClient, useWalletClient } from "wagmi";
 
 import { invalidatePlayBalance, usePlayBalance } from "@/hooks/use-play-balance";
 import { somniaTestnet } from "@/lib/chains/somnia";
-import { sendWalletTx } from "@/lib/send-wallet-tx";
+import { FALLBACK_GAS_APPROVE, sendWalletTx } from "@/lib/send-wallet-tx";
 import {
   playTokenReadAbi,
   playTokenWriteAbi,
@@ -108,7 +108,7 @@ export function PlayscriptLockScriptButton({
             functionName: "approve",
             args: [playscriptCore, maxUint256],
           }),
-          fallbackGas: 120_000n,
+          fallbackGas: FALLBACK_GAS_APPROVE,
         });
         await publicClient.waitForTransactionReceipt({ hash: hashA });
       }
