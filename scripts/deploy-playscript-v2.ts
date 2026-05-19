@@ -15,7 +15,7 @@
  * 6. `kernel.setScheduler(host)`; deploy `PlayscriptV2Positions` (ERC-1155 lock / claim / unwind).
  * 7. Deploy `PlayscriptV2LockRegistry` (on-chain lock history for My Scripts) + `positions.setLockRegistry`.
  * 8. Link `vault.setPositions` + `kernel.setPositions` to the new positions contract.
- * 9. Write `deployments/playscript-v2-somnia.json` (15-leg market; preserves `previous*` when redeploying).
+ * 9. Write `deployments/playscript-v2-somnia.json` (replaces `contracts`; does not keep `previous*`).
  *
  * Env:
  * - `PRIVATE_KEY` (required)
@@ -83,15 +83,6 @@ async function readSettleDepositTotals(kernel) {
     kernel.read.getSettleDepositTotal([KERNEL_SPORT.mlb]),
   ]);
   return { soccer, basketball, nfl, mlb };
-}
-
-function loadPriorDeployment(outAbs) {
-  if (!fs.existsSync(outAbs)) return null;
-  try {
-    return JSON.parse(fs.readFileSync(outAbs, "utf8"));
-  } catch {
-    return null;
-  }
 }
 
 async function main() {
@@ -238,8 +229,6 @@ async function main() {
     process.env.PLAYSCRIPT_V2_DEPLOYMENT_OUT?.trim() || path.join("deployments", "playscript-v2-somnia.json");
   const outAbs = path.isAbsolute(outRel) ? outRel : path.join(process.cwd(), outRel);
   fs.mkdirSync(path.dirname(outAbs), { recursive: true });
-  const prior = loadPriorDeployment(outAbs);
-
   const deployedAt = new Date().toISOString();
   /** @type {Record<string, { address: string; deploymentBlock: string }>} */
   const contracts = {
@@ -288,23 +277,6 @@ async function main() {
       fetchCounts,
     },
     contracts,
-    ...(prior?.contracts?.PlayscriptKernel?.address
-      ? { previousPlayscriptKernel: prior.contracts.PlayscriptKernel.address }
-      : {}),
-    ...(prior?.contracts?.PlayscriptV2Positions?.address
-      ? { previousPlayscriptV2Positions: prior.contracts.PlayscriptV2Positions.address }
-      : {}),
-    ...(prior?.contracts?.PlayscriptV2LockRegistry?.address
-      ? { previousPlayscriptV2LockRegistry: prior.contracts.PlayscriptV2LockRegistry.address }
-      : {}),
-    ...(prior?.contracts?.PlayVault?.address &&
-    prior.contracts.PlayVault.address !== vault.address
-      ? { previousPlayVault: prior.contracts.PlayVault.address }
-      : {}),
-    ...(prior?.contracts?.PlayscriptReactivityHost?.address &&
-    prior.contracts.PlayscriptReactivityHost.address !== host.address
-      ? { previousPlayscriptReactivityHost: prior.contracts.PlayscriptReactivityHost.address }
-      : {}),
   };
 
   fs.writeFileSync(outAbs, `${JSON.stringify(record, null, 2)}\n`, "utf8");
@@ -318,16 +290,6 @@ async function main() {
   console.log("PlayscriptV2LockRegistry:", lockRegistry.address);
   console.log("PLAY:                   ", playAddr);
   console.log("Owner:                  ", deployer);
-
-  if (record.previousPlayscriptKernel) {
-    console.log("\nPrevious kernel (old matches / grading):", record.previousPlayscriptKernel);
-  }
-  if (record.previousPlayscriptV2Positions) {
-    console.log("Previous positions (old ERC-1155 locks):", record.previousPlayscriptV2Positions);
-  }
-  if (record.previousPlayscriptV2LockRegistry) {
-    console.log("Previous lock registry:", record.previousPlayscriptV2LockRegistry);
-  }
 
   console.log("\nRegister matches from the app (ESPN URLs + selectors) or:");
   console.log("  npm run register:v2-test-match:somnia");

@@ -39,7 +39,11 @@ export function FixtureV2LockedScript({ script, matchId, displayStatus }: Props)
   const [err, setErr] = useState<string | null>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
 
-  const showTicks = script.settled;
+  const liveTicksKnown = script.picks.some((p) => p.correct !== null);
+  const showTicks = script.settled || liveTicksKnown;
+  const liveCorrectCount = script.picks.filter((p) => p.correct === true).length;
+  const scoreCount = script.settled ? script.correctCount : liveCorrectCount;
+
   const statusLine = script.settled
     ? script.isWinner
       ? "Winner — all picks hit"
@@ -47,9 +51,13 @@ export function FixtureV2LockedScript({ script, matchId, displayStatus }: Props)
     : script.settleInProgress
       ? "Settling onchain…"
       : displayStatus === "live"
-        ? "Match in progress"
+        ? liveTicksKnown
+          ? `${liveCorrectCount}/${script.totalPicks} correct so far`
+          : "Match in progress"
         : displayStatus === "finished"
-          ? "Awaiting settlement"
+          ? liveTicksKnown
+            ? `${liveCorrectCount}/${script.totalPicks} from scoreline (awaiting onchain)`
+            : "Awaiting settlement"
           : "Locked — good luck";
 
   const onClaim = useCallback(async () => {
@@ -173,15 +181,15 @@ export function FixtureV2LockedScript({ script, matchId, displayStatus }: Props)
           </div>
           <div className="shrink-0 text-right">
             <p
-              className={`font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-5xl font-extrabold leading-none tracking-tight tabular-nums sm:text-6xl ${scoreDisplayClass(script.correctCount, script.totalPicks)}`}
+              className={`font-[family-name:var(--font-syne),ui-sans-serif,sans-serif] text-5xl font-extrabold leading-none tracking-tight tabular-nums sm:text-6xl ${scoreDisplayClass(scoreCount, script.totalPicks)}`}
             >
-              {showTicks ? script.correctCount : "—"}
+              {showTicks ? scoreCount : "—"}
               <span className="text-3xl font-bold text-zinc-500 sm:text-4xl">
                 /{script.totalPicks}
               </span>
             </p>
             <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-              {showTicks ? "correct" : "pending"}
+              {script.settled ? "correct" : showTicks ? "so far" : "pending"}
             </p>
           </div>
         </div>

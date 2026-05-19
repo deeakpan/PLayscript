@@ -7,10 +7,21 @@
  * Env: `PRIVATE_KEY`; optional `WITHDRAW_NATIVE_TO`, `PLAYSCRIPT_V2_WDR_HOST_STT`,
  * `PLAYSCRIPT_V2_WDR_KERNEL_STT`.
  */
+import { readFileSync } from "node:fs";
 import hre from "hardhat";
 import { formatEther, getAddress, isAddress, parseEther } from "viem";
 
-import { getV2DeploymentContract } from "../lib/playscript-v2-deployment-file";
+const deployment = JSON.parse(
+  readFileSync("deployments/playscript-v2-somnia.json", "utf8"),
+);
+
+function deploymentContract(name: string): `0x${string}` {
+  const raw = deployment.contracts?.[name]?.address?.trim();
+  if (!raw || !isAddress(raw)) {
+    throw new Error(`${name} address missing in deployments/playscript-v2-somnia.json`);
+  }
+  return getAddress(raw) as `0x${string}`;
+}
 
 async function waitWrite(publicClient, writeResult) {
   const hash =
@@ -38,14 +49,11 @@ async function main() {
       ? (getAddress(toRaw) as `0x${string}`)
       : (getAddress(deployer) as `0x${string}`);
 
-  const hostAmount = parseEther(process.env.PLAYSCRIPT_V2_WDR_HOST_STT?.trim() || "34.3");
-  const kernelAmount = parseEther(process.env.PLAYSCRIPT_V2_WDR_KERNEL_STT?.trim() || "43");
+  const hostAmount = parseEther(process.env.PLAYSCRIPT_V2_WDR_HOST_STT?.trim() || "40");
+  const kernelAmount = parseEther(process.env.PLAYSCRIPT_V2_WDR_KERNEL_STT?.trim() || "50");
 
-  const hostAddr = getV2DeploymentContract("PlayscriptReactivityHost");
-  const kernelAddr = getV2DeploymentContract("PlayscriptKernel");
-  if (!hostAddr || !kernelAddr) {
-    throw new Error("Host or kernel address missing in deployments/playscript-v2-somnia.json.");
-  }
+  const hostAddr = deploymentContract("PlayscriptReactivityHost");
+  const kernelAddr = deploymentContract("PlayscriptKernel");
 
   const host = await hre.viem.getContractAt("PlayscriptReactivityHost", hostAddr, {
     client: { wallet, public: publicClient },

@@ -65,6 +65,8 @@ type Props = {
   legMask12: number;
   /** When the user already has a locked script, hide stake / Continue (shown in `FixtureV2LockedScript`). */
   hideLockForm?: boolean;
+  /** After kickoff — hide register / lock UI (scoreline + your script only on the page). */
+  postKickoff?: boolean;
   /** Called as soon as lock tx confirms so the parent can show the locked script card without waiting on indexers. */
   onScriptLocked?: () => void;
 };
@@ -101,6 +103,7 @@ export function FixturePlayscriptV2Section({
   canRegister,
   legMask12,
   hideLockForm = false,
+  postKickoff = false,
   onScriptLocked,
 }: Props) {
   const env = useMemo(() => getPlayscriptV2KernelEnv(), []);
@@ -561,6 +564,9 @@ export function FixturePlayscriptV2Section({
   }
 
   if (matchId !== null) {
+    if (postKickoff && hideLockForm && !lockModalOpen) {
+      return null;
+    }
     if (hideLockForm && !lockModalOpen) {
       if (!err) return null;
       return (

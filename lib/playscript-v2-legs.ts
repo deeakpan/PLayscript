@@ -1,5 +1,9 @@
 import type { ScriptSportKey } from "./fixtures-shared";
 import {
+  evaluateV2LegPickLive,
+  type V2GradingFacts,
+} from "./playscript-v2-grading";
+import {
   V2_BASKETBALL_MARKET_LEG_KINDS,
   V2_BASKETBALL_LEG_KINDS as BK,
   V2_MLB_MARKET_LEG_KINDS,
@@ -400,6 +404,13 @@ export type V2GradedPick = V2LegPickDescription & {
   correct: boolean | null;
 };
 
+export type V2LiveGradeContext = {
+  sport: number;
+  facts: V2GradingFacts;
+  /** ESPN / display status: full-time — grade all legs from scoreline. */
+  matchEnded: boolean;
+};
+
 /** Grade each selected leg against `resolvedLegsBitmask` (bit index = leg id − 1). */
 export function gradeV2LegMaskPicks(
   fixtureId: string,
@@ -410,7 +421,16 @@ export function gradeV2LegMaskPicks(
   resolvedLegsBitmask: number,
   settled: boolean,
   registeredLegKinds?: readonly number[],
+  live?: V2LiveGradeContext,
 ): { picks: readonly V2GradedPick[]; correctCount: number; totalPicks: number } {
+  const market = v2MarketLegsForGrading(
+    fixtureId,
+    homeTeam,
+    awayTeam,
+    sportKey,
+    registeredLegKinds,
+  );
+  const kindByLegId = new Map(market.map((l) => [l.id, l.kind]));
   const picks = describeV2LegMaskPicks(
     fixtureId,
     homeTeam,
@@ -422,13 +442,20 @@ export function gradeV2LegMaskPicks(
   const resolved = resolvedLegsBitmask & V2_MASK_MAX;
   let correctCount = 0;
   const graded: V2GradedPick[] = picks.map((p) => {
-    if (!settled) {
-      return { ...p, correct: null };
+    if (settled) {
+      const bit = 1 << (p.legId - 1);
+      const correct = (resolved & bit) !== 0;
+      if (correct) correctCount++;
+      return { ...p, correct };
     }
-    const bit = 1 << (p.legId - 1);
-    const correct = (resolved & bit) !== 0;
-    if (correct) correctCount++;
-    return { ...p, correct };
+    if (live) {
+      const kind = kindByLegId.get(p.legId);
+      if (kind === undefined) return { ...p, correct: null };
+      const correct = evaluateV2LegPickLive(live.sport, kind, live.facts, live.matchEnded);
+      if (correct === true) correctCount++;
+      return { ...p, correct };
+    }
+    return { ...p, correct: null };
   });
   return { picks: graded, correctCount, totalPicks: picks.length };
 }

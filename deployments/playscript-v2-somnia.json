@@ -3,12 +3,12 @@
   "network": "somnia",
   "graphNetwork": "somnia-testnet",
   "chainId": 50312,
-  "deployedAt": "2026-05-19T11:30:33.668Z",
+  "deployedAt": "2026-05-19T08:16:42.794Z",
   "deployer": "0x68ac96ce64d62386b1a5e2dff8f0f01feed46e09",
   "playToken": "0xEFA95569C06B8D77fC80092cf5BAa7f766728b83",
   "nativeHostDeployWei": "40000000000000000000",
   "nativeKernelFundWei": "50000000000000000000",
-  "kernelFundTxBlock": "386573625",
+  "kernelFundTxBlock": "386458098",
   "kernelSettlement": {
     "abi": "espn-v2",
     "fetchCounts": {
@@ -20,29 +20,24 @@
   },
   "contracts": {
     "PlayscriptKernel": {
-      "address": "0x5e39f6c86e50903fd3fa9208a3947416fb2071b6",
-      "deploymentBlock": "386573600"
+      "address": "0x006928af19586f00d4af70e5d0add961cd68b3c1",
+      "deploymentBlock": "386458075"
     },
     "PlayVault": {
-      "address": "0xcb119f6a2300c29e6811a28093a9022e19f62b65",
-      "deploymentBlock": "386573642"
+      "address": "0xf6878354876e6dd791fee14efcee18511bff6309",
+      "deploymentBlock": "386458115"
     },
     "PlayscriptReactivityHost": {
-      "address": "0xc81bd869ccb81b02e34aee832e1a8ec35f2900d4",
-      "deploymentBlock": "386573699"
+      "address": "0x82ade2a5b4af8f5f03b058310dd2a5db6957b8c3",
+      "deploymentBlock": "386458161"
     },
     "PlayscriptV2Positions": {
-      "address": "0x7a1aa1991380fd46f15d35cff28bccad9160bd51",
-      "deploymentBlock": "386573737"
+      "address": "0x9b6d2583aa96787bd369fbf2e01027258edd9cea",
+      "deploymentBlock": "386458193"
     },
     "PlayscriptV2LockRegistry": {
-      "address": "0xb34ef97c14f25b33c71a3b289749de61f7b00cb3",
-      "deploymentBlock": "386573756"
+      "address": "0xfb201fb077ecfeaa22e465286ae9addea2f60b4c",
+      "deploymentBlock": "386458211"
     }
-  },
-  "previousPlayscriptKernel": "0x006928af19586f00d4af70e5d0add961cd68b3c1",
-  "previousPlayscriptV2Positions": "0x9b6d2583aa96787bd369fbf2e01027258edd9cea",
-  "previousPlayscriptV2LockRegistry": "0xfb201fb077ecfeaa22e465286ae9addea2f60b4c",
-  "previousPlayVault": "0xf6878354876e6dd791fee14efcee18511bff6309",
-  "previousPlayscriptReactivityHost": "0x82ade2a5b4af8f5f03b058310dd2a5db6957b8c3"
+  }
 }

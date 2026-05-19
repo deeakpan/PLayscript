@@ -2,19 +2,26 @@
 
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { usePublicClient } from "wagmi";
 
 import { FixtureClaimPayoutModal } from "@/components/fixtures/fixture-claim-payout-modal";
 import { FixtureKickoffEta } from "@/components/fixtures/fixture-kickoff-eta";
 import { FixturePlayscriptSection } from "@/components/fixtures/fixture-playscript-section";
 import { FixturePlayscriptV2Section } from "@/components/fixtures/fixture-playscript-v2-section";
 import { FixtureV2LockedScript } from "@/components/fixtures/fixture-v2-locked-script";
+import { FixtureV2SettlementCountdown } from "@/components/fixtures/fixture-v2-settlement-countdown";
 import { PlayscriptV2LegBuilder } from "@/components/fixtures/playscript-v2-leg-builder";
 import { usePlayscriptV2FixtureScript } from "@/hooks/use-playscript-v2-fixture-script";
 import { usePlayscriptV2MatchByUrl } from "@/hooks/use-playscript-v2-match-by-url";
+import { somniaTestnet } from "@/lib/chains/somnia";
 import { deriveDisplayMatchStatus } from "@/lib/fixture-display-status";
 import type { FixtureRow, MatchStatus } from "@/lib/fixtures-shared";
 import { usePlayscriptMatchByUrl } from "@/hooks/use-playscript-match-by-url";
 import { usePlayscriptUserScript } from "@/hooks/use-playscript-user-script";
+import { getPlayscriptV2KernelEnv } from "@/lib/playscript-public-env";
+import { readKernelMatch } from "@/lib/playscript-v2-kernel-read";
+import { v2SettlementEligibleAtSec } from "@/lib/playscript-v2-settlement-eligible";
 import { deriveSlotOutcomesFromScore } from "@/lib/script-slot-outcomes";
 
 function statusLabel(s: MatchStatus): string {
@@ -72,16 +79,20 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
   const [v2LegMask, setV2LegMask] = useState(0);
   const [v2LockedLocally, setV2LockedLocally] = useState(false);
 
-  useEffect(() => {
-    const id = window.setInterval(() => setNowMs(Date.now()), 30_000);
-    return () => window.clearInterval(id);
-  }, []);
+  const kernelEnv = useMemo(() => getPlayscriptV2KernelEnv(), []);
+  const publicClient = usePublicClient({ chainId: somniaTestnet.id });
 
   const { home, away, league, kickoffUtc, status, homeScore, awayScore, statusDetail } = fixture;
   const kickoffMs = new Date(kickoffUtc).getTime();
+  const kickoffOpen = Number.isFinite(kickoffMs) && kickoffMs > nowMs;
+  const postKickoff = !kickoffOpen;
   const displayStatus = deriveDisplayMatchStatus(status, kickoffMs, nowMs, fixture.sportKey);
 
-  const kickoffOpen = Number.isFinite(kickoffMs) && kickoffMs > nowMs;
+  useEffect(() => {
+    const ms = postKickoff ? 1000 : 30_000;
+    const id = window.setInterval(() => setNowMs(Date.now()), ms);
+    return () => window.clearInterval(id);
+  }, [postKickoff]);
   const canEditScripts =
     kickoffOpen && displayStatus !== "finished" && displayStatus !== "live";
 
@@ -97,18 +108,18 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
   const isPreMatchPlaceholder =
     kickoffOpen && hasLineScore && homeScore === 0 && awayScore === 0;
   const showScriptOutcomesBlock =
-    displayStatus !== "live" &&
     hasLineScore &&
     slotActuals !== null &&
     slotActuals.length > 0 &&
-    !isPreMatchPlaceholder;
-  const showLiveStatsBlock = displayStatus === "live";
+    !isPreMatchPlaceholder &&
+    (postKickoff || displayStatus === "finished");
 
   const matchByUrl = usePlayscriptMatchByUrl(lookupeventUrl);
   const v2MatchQ = usePlayscriptV2MatchByUrl(lookupeventUrl);
   const v2MatchRegistered = v2MatchQ.data?.matchId != null;
   const v2MatchId = v2MatchQ.data?.matchId ?? null;
   const playDecimals = 18;
+  const matchEnded = displayStatus === "finished";
   const v2ScriptQ = usePlayscriptV2FixtureScript({
     matchId: v2MatchId,
     fixtureId: fixture.id,
@@ -116,7 +127,28 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
     awayTeam: away,
     sportKey: fixture.sportKey,
     decimals: playDecimals,
+    liveHomeScore: hasLineScore ? homeScore : undefined,
+    liveAwayScore: hasLineScore ? awayScore : undefined,
+    matchEnded,
   });
+
+  const chainMatchQ = useQuery({
+    queryKey: ["v2-kernel-match-row", kernelEnv.ok ? kernelEnv.kernel : null, v2MatchId?.toString() ?? null],
+    enabled: kernelEnv.ok && v2MatchId !== null && !!publicClient && postKickoff,
+    queryFn: async () => {
+      if (!kernelEnv.ok || v2MatchId === null || !publicClient) throw new Error("bad");
+      return readKernelMatch(publicClient, kernelEnv.kernel, v2MatchId);
+    },
+    refetchInterval: 15_000,
+  });
+
+  const settlementEligibleAtSec =
+    chainMatchQ.data != null
+      ? v2SettlementEligibleAtSec(
+          Number(chainMatchQ.data.kickoff),
+          chainMatchQ.data.finalizeDelaySec,
+        )
+      : null;
   const hasV2Script = v2ScriptQ.data?.hasScript === true || v2LockedLocally;
   const onV2ScriptLocked = useCallback(() => {
     setV2LockedLocally(true);
@@ -140,9 +172,13 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
 
   const scorelineSectionTitle = outcomeGrading
     ? "Your script results"
-    : displayStatus === "finished"
-      ? "Result from scoreline"
-      : "Current score line";
+    : displayStatus === "live"
+      ? "Current score line"
+      : displayStatus === "finished" || postKickoff
+        ? "Result from scoreline"
+        : "Current score line";
+
+  const showV2LegBuilder = v2MatchRegistered && !hasV2Script && canEditScripts;
 
   const claimModalData = useMemo(() => {
     const d = userScriptQ.data;
@@ -209,35 +245,12 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
         {showKickoffCountdown ? <FixtureKickoffEta kickoffUtc={kickoffUtc} /> : null}
       </header>
 
-      {showLiveStatsBlock ? (
-        <section aria-label="Live match stats" className="space-y-4">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
-            Live stats
-          </h3>
-          <div className="max-w-md space-y-3 text-sm">
-            {hasLineScore ? (
-              <p className="tabular-nums text-[var(--foreground)]">
-                <span className="text-[var(--team-text)]">{home}</span>{" "}
-                <span className="font-semibold">{homeScore}</span>
-                <span className="mx-2 text-[var(--muted)]">–</span>
-                <span className="font-semibold">{awayScore}</span>{" "}
-                <span className="text-[var(--team-text)]">{away}</span>
-              </p>
-            ) : (
-              <p className="text-[var(--muted)]">Score line not in the feed yet — check back shortly.</p>
-            )}
-            {statusDetail ? (
-              <p>
-                <span className="text-[var(--muted)]">Period / status: </span>
-                <span className="font-medium text-[var(--foreground)]">{statusDetail}</span>
-              </p>
-            ) : null}
-            <p className="text-xs leading-relaxed text-[var(--muted)]">
-              Script slot outcomes are hidden while the match is live. Settlement uses the onchain
-              window after kickoff + finalize delay.
-            </p>
-          </div>
-        </section>
+      {postKickoff && v2MatchId !== null && chainMatchQ.data && !chainMatchQ.data.settled ? (
+        <FixtureV2SettlementCountdown
+          settlementEligibleAtSec={settlementEligibleAtSec ?? 0}
+          settled={chainMatchQ.data.settled}
+          settleInProgress={chainMatchQ.data.settleInProgress}
+        />
       ) : null}
 
       {showScriptOutcomesBlock ? (
@@ -247,9 +260,14 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
               <h3 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
                 {scorelineSectionTitle}
               </h3>
-              {!outcomeGrading && displayStatus !== "finished" ? (
+              {!outcomeGrading && !hasV2Script ? (
                 <p className="text-xs leading-relaxed text-[var(--muted)]">
-                  Derived from the ESPN score line — not your Playscript v2 picks.
+                  Derived from the ESPN score line — not your Playscript picks.
+                </p>
+              ) : null}
+              {statusDetail && displayStatus === "live" ? (
+                <p className="text-xs text-[var(--muted)]">
+                  <span className="font-medium text-[var(--foreground)]">{statusDetail}</span>
                 </p>
               ) : null}
               <dl
@@ -346,7 +364,7 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
         </section>
       ) : null}
 
-      {v2MatchRegistered && !hasV2Script ? (
+      {showV2LegBuilder ? (
         <PlayscriptV2LegBuilder
           fixtureId={fixture.id}
           homeTeam={home}
@@ -357,19 +375,22 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
         />
       ) : null}
 
-      <FixturePlayscriptV2Section
-        lookupeventUrl={lookupeventUrl}
-        fixtureId={fixture.id}
-        leagueSlug={fixture.sourceLeagueId ?? ""}
-        homeTeam={home}
-        awayTeam={away}
-        sportKey={fixture.sportKey}
-        kickoffUtc={fixture.kickoffUtc}
-        canRegister={canEditScripts}
-        legMask12={hasV2Script && v2ScriptQ.data?.hasScript ? v2ScriptQ.data.legMask12 : v2LegMask}
-        hideLockForm={hasV2Script}
-        onScriptLocked={onV2ScriptLocked}
-      />
+      {!postKickoff || !hasV2Script ? (
+        <FixturePlayscriptV2Section
+          lookupeventUrl={lookupeventUrl}
+          fixtureId={fixture.id}
+          leagueSlug={fixture.sourceLeagueId ?? ""}
+          homeTeam={home}
+          awayTeam={away}
+          sportKey={fixture.sportKey}
+          kickoffUtc={fixture.kickoffUtc}
+          canRegister={canEditScripts}
+          legMask12={hasV2Script && v2ScriptQ.data?.hasScript ? v2ScriptQ.data.legMask12 : v2LegMask}
+          hideLockForm={hasV2Script}
+          postKickoff={postKickoff}
+          onScriptLocked={onV2ScriptLocked}
+        />
+      ) : null}
 
       <FixturePlayscriptSection
         lookupeventUrl={lookupeventUrl}

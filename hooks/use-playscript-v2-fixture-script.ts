@@ -7,6 +7,7 @@ import { useConnection, usePublicClient } from "wagmi";
 import { somniaTestnet } from "@/lib/chains/somnia";
 import type { ScriptSportKey } from "@/lib/fixtures-shared";
 import { formatPlayAmount } from "@/lib/format-play-display";
+import { v2GradingFactsFromScores } from "@/lib/playscript-v2-grading";
 import {
   allV2FivePickMasks,
   gradeV2LegMaskPicks,
@@ -51,6 +52,11 @@ type Args = {
   awayTeam: string;
   sportKey: ScriptSportKey;
   decimals: number;
+  /** Live ESPN line — enables in-play ticks on your script card. */
+  liveHomeScore?: number;
+  liveAwayScore?: number;
+  /** Fixture display status is finished (grade from scoreline before onchain settle). */
+  matchEnded?: boolean;
 };
 
 export function usePlayscriptV2FixtureScript({
@@ -60,6 +66,9 @@ export function usePlayscriptV2FixtureScript({
   awayTeam,
   sportKey,
   decimals,
+  liveHomeScore,
+  liveAwayScore,
+  matchEnded = false,
 }: Args) {
   const { address, status } = useConnection();
   const connected = status === "connected";
@@ -77,6 +86,9 @@ export function usePlayscriptV2FixtureScript({
       kernelEnv.ok ? kernelEnv.kernel : null,
       positionsEnv.ok ? positionsEnv.positions : null,
       registryEnv.ok ? registryEnv.lockRegistry : null,
+      liveHomeScore ?? null,
+      liveAwayScore ?? null,
+      matchEnded,
     ],
     enabled:
       connected &&
@@ -85,7 +97,11 @@ export function usePlayscriptV2FixtureScript({
       matchId !== null &&
       kernelEnv.ok &&
       positionsEnv.ok,
-    refetchInterval: 20_000,
+    refetchInterval: (query) => {
+      const d = query.state.data;
+      if (d?.hasScript === true && !d.settled) return 12_000;
+      return 20_000;
+    },
     queryFn: async (): Promise<PlayscriptV2FixtureScript> => {
       if (!address || !publicClient || matchId === null || !kernelEnv.ok || !positionsEnv.ok) {
         return { hasScript: false };
@@ -140,6 +156,16 @@ export function usePlayscriptV2FixtureScript({
       const registeredLegKinds =
         match.legKinds.length === 15 ? match.legKinds : undefined;
 
+      const hasLiveLine =
+        typeof liveHomeScore === "number" &&
+        typeof liveAwayScore === "number" &&
+        Number.isFinite(liveHomeScore) &&
+        Number.isFinite(liveAwayScore);
+
+      const liveFacts = hasLiveLine
+        ? v2GradingFactsFromScores(liveHomeScore, liveAwayScore)
+        : null;
+
       const { picks, correctCount, totalPicks } = gradeV2LegMaskPicks(
         fixtureId,
         homeTeam,
@@ -149,6 +175,13 @@ export function usePlayscriptV2FixtureScript({
         match.resolvedLegsBitmask,
         match.settled,
         registeredLegKinds,
+        liveFacts
+          ? {
+              sport: match.sport,
+              facts: liveFacts,
+              matchEnded: matchEnded || match.settled,
+            }
+          : undefined,
       );
 
       let isWinner: boolean | null = null;
