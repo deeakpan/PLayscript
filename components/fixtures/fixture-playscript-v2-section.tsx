@@ -65,6 +65,8 @@ type Props = {
   legMask12: number;
   /** When the user already has a locked script, hide stake / Continue (shown in `FixtureV2LockedScript`). */
   hideLockForm?: boolean;
+  /** Called as soon as lock tx confirms so the parent can show the locked script card without waiting on indexers. */
+  onScriptLocked?: () => void;
 };
 
 function parseStakeWei(playStake: string, decimals: number): bigint {
@@ -99,6 +101,7 @@ export function FixturePlayscriptV2Section({
   canRegister,
   legMask12,
   hideLockForm = false,
+  onScriptLocked,
 }: Props) {
   const env = useMemo(() => getPlayscriptV2KernelEnv(), []);
   const positionsEnv = useMemo(() => getPlayscriptV2PositionsEnv(), []);
@@ -116,6 +119,7 @@ export function FixturePlayscriptV2Section({
   const [okMsg, setOkMsg] = useState<string | null>(null);
   const [stakePlay, setStakePlay] = useState("10");
   const [lockModalOpen, setLockModalOpen] = useState(false);
+  const [lockModalSuccess, setLockModalSuccess] = useState(false);
 
   const matchId = q.data?.matchId ?? null;
 
@@ -433,13 +437,19 @@ export function FixturePlayscriptV2Section({
       });
       await publicClient.waitForTransactionReceipt({ hash: hashL });
 
-      await queryClient.invalidateQueries({ queryKey: ["v2-erc1155-position"] });
-      await queryClient.invalidateQueries({ queryKey: ["v2-lock-quote"] });
-      await queryClient.invalidateQueries({ queryKey: ["v2-kernel-match-row"] });
-      await queryClient.invalidateQueries({ queryKey: ["v2-fixture-script"] });
-      await invalidatePlayBalance(queryClient);
-      setLockModalOpen(false);
-      setOkMsg("Script locked. If your picks win after settlement, claim PLAY from your ticket below.");
+      setLockModalSuccess(true);
+      onScriptLocked?.();
+
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["v2-erc1155-position"] }),
+        queryClient.invalidateQueries({ queryKey: ["v2-lock-quote"] }),
+        queryClient.invalidateQueries({ queryKey: ["v2-kernel-match-row"] }),
+        queryClient.invalidateQueries({ queryKey: ["v2-fixture-script"] }),
+        queryClient.invalidateQueries({ queryKey: ["playscript-v2-user-scripts"] }),
+        invalidatePlayBalance(queryClient),
+        queryClient.refetchQueries({ queryKey: ["v2-erc1155-position"] }),
+        queryClient.refetchQueries({ queryKey: ["v2-fixture-script"] }),
+      ]);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErr(msg.length > 260 ? `${msg.slice(0, 260)}…` : msg);
@@ -459,7 +469,14 @@ export function FixturePlayscriptV2Section({
     lockQuote,
     stakePlay,
     walletClient,
+    onScriptLocked,
   ]);
+
+  const closeLockModal = useCallback(() => {
+    setLockModalOpen(false);
+    setLockModalSuccess(false);
+    setErr(null);
+  }, []);
 
   const onUnwindMax = useCallback(async () => {
     setErr(null);
@@ -544,23 +561,18 @@ export function FixturePlayscriptV2Section({
   }
 
   if (matchId !== null) {
-    if (hideLockForm) {
-      if (!okMsg && !err) return null;
+    if (hideLockForm && !lockModalOpen) {
+      if (!err) return null;
       return (
         <section className="border-t border-[var(--border)] pt-4" aria-label="Lock script status">
-          {okMsg ? (
-            <p className="text-sm text-[var(--foreground)]" role="status">
-              {okMsg}
-            </p>
-          ) : null}
-          {err ? <p className="mt-2 text-sm text-rose-300/90">{err}</p> : null}
+          {err ? <p className="text-sm text-rose-300/90">{err}</p> : null}
         </section>
       );
     }
 
     return (
       <section className="border-t border-[var(--border)] pt-8" aria-label="Lock script">
-        {positionsEnv.ok ? (
+        {!hideLockForm && positionsEnv.ok ? (
           maskReady ? (
             <div className="mt-4 max-w-sm space-y-3 rounded-xl border border-[var(--border)]/70 bg-[var(--surface)]/20 p-4">
               {chainMatchQ.isPending ? (
@@ -613,24 +625,15 @@ export function FixturePlayscriptV2Section({
                   <button
                     type="button"
                     disabled={busy || !walletClient || !publicClient || !lockQuote || lockQuote.noRoom}
-                    onClick={() => setLockModalOpen(true)}
+                    onClick={() => {
+                      setLockModalSuccess(false);
+                      setErr(null);
+                      setLockModalOpen(true);
+                    }}
                     className="w-full rounded-lg border border-[var(--accent)]/40 bg-[var(--surface-active)] py-2.5 text-sm font-semibold text-[var(--foreground)] transition-colors hover:border-[var(--accent)]/55 hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-55"
                   >
                     Continue
                   </button>
-
-                  <FixtureLockScriptModal
-                    open={lockModalOpen}
-                    onClose={() => {
-                      if (!busy) setLockModalOpen(false);
-                    }}
-                    onConfirm={() => void onLockV2()}
-                    busy={busy}
-                    decimals={decimals}
-                    quote={lockQuote}
-                    selections={selectionLines}
-                    kickoffUtc={kickoffUtc}
-                  />
 
                   {positionQ.data && positionQ.data.balance > BigInt(0) ? (
                     <button
@@ -653,11 +656,19 @@ export function FixturePlayscriptV2Section({
         )}
 
         {err ? <p className="mt-2 max-w-sm text-xs text-rose-300/90">{err}</p> : null}
-        {okMsg ? (
-          <p className="mt-2 max-w-sm text-xs font-medium text-emerald-400/95" role="status">
-            {okMsg}
-          </p>
-        ) : null}
+        <FixtureLockScriptModal
+          open={lockModalOpen}
+          onClose={() => {
+            if (!busy) closeLockModal();
+          }}
+          onConfirm={() => void onLockV2()}
+          busy={busy}
+          success={lockModalSuccess}
+          decimals={decimals}
+          quote={lockQuote}
+          selections={selectionLines}
+          kickoffUtc={kickoffUtc}
+        />
       </section>
     );
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 import { FixtureClaimPayoutModal } from "@/components/fixtures/fixture-claim-payout-modal";
 import { FixtureKickoffEta } from "@/components/fixtures/fixture-kickoff-eta";
@@ -70,6 +70,7 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [v2LegMask, setV2LegMask] = useState(0);
+  const [v2LockedLocally, setV2LockedLocally] = useState(false);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowMs(Date.now()), 30_000);
@@ -116,7 +117,11 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
     sportKey: fixture.sportKey,
     decimals: playDecimals,
   });
-  const hasV2Script = v2ScriptQ.data?.hasScript === true;
+  const hasV2Script = v2ScriptQ.data?.hasScript === true || v2LockedLocally;
+  const onV2ScriptLocked = useCallback(() => {
+    setV2LockedLocally(true);
+    void v2ScriptQ.refetch();
+  }, [v2ScriptQ]);
   const resolvedMatchId =
     matchByUrl.data?.matchId !== null && matchByUrl.data?.matchId !== undefined
       ? Number(matchByUrl.data.matchId)
@@ -333,6 +338,12 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
           matchId={v2MatchId}
           displayStatus={displayStatus}
         />
+      ) : hasV2Script && v2LockedLocally && v2MatchId !== null ? (
+        <section className="max-w-xl rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3">
+          <p className="text-sm font-medium text-emerald-400/95" role="status">
+            Script locked — Good luck! Loading your picks…
+          </p>
+        </section>
       ) : null}
 
       {v2MatchRegistered && !hasV2Script ? (
@@ -357,6 +368,7 @@ export function FixtureDetailView({ fixture, lookupeventUrl }: Props) {
         canRegister={canEditScripts}
         legMask12={hasV2Script && v2ScriptQ.data?.hasScript ? v2ScriptQ.data.legMask12 : v2LegMask}
         hideLockForm={hasV2Script}
+        onScriptLocked={onV2ScriptLocked}
       />
 
       <FixturePlayscriptSection
