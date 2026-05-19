@@ -8,6 +8,7 @@ import { useConnection, usePublicClient, useWalletClient } from "wagmi";
 import { invalidatePlayBalance } from "@/hooks/use-play-balance";
 import type { PlayscriptV2FixtureScript } from "@/hooks/use-playscript-v2-fixture-script";
 import { somniaTestnet } from "@/lib/chains/somnia";
+import { sendWalletTx } from "@/lib/send-wallet-tx";
 import { difficultyLabel } from "@/lib/playscript-v2-legs";
 import { getPlayscriptV2PositionsEnv } from "@/lib/playscript-public-env";
 import { playscriptV2PositionsWriteAbi } from "@/lib/playscript-v2-positions-abi";
@@ -66,9 +67,11 @@ export function FixtureV2LockedScript({ script, matchId, displayStatus }: Props)
     if (!address || !walletClient || !publicClient || !positionsEnv.ok) return;
     setBusy(true);
     try {
-      const hash = await walletClient.sendTransaction({
-        chain: somniaTestnet,
+      const hash = await sendWalletTx({
+        walletClient,
+        publicClient,
         account: address,
+        chain: somniaTestnet,
         to: positionsEnv.positions,
         data: encodeFunctionData({
           abi: playscriptV2PositionsWriteAbi,
@@ -106,9 +109,11 @@ export function FixtureV2LockedScript({ script, matchId, displayStatus }: Props)
     }
     setBusy(true);
     try {
-      const hash = await walletClient.sendTransaction({
-        chain: somniaTestnet,
+      const hash = await sendWalletTx({
+        walletClient,
+        publicClient,
         account: address,
+        chain: somniaTestnet,
         to: positionsEnv.positions,
         data: encodeFunctionData({
           abi: playscriptV2PositionsWriteAbi,

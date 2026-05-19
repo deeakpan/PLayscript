@@ -6,6 +6,7 @@ import { encodeFunctionData, formatUnits, isAddress, maxUint256, parseUnits } fr
 import { useConnection, usePublicClient, useWalletClient } from "wagmi";
 
 import { somniaTestnet } from "@/lib/chains/somnia";
+import { sendWalletTx } from "@/lib/send-wallet-tx";
 import { playVaultReadAbi, playVaultWriteAbi } from "@/lib/play-vault-abi";
 import { playTokenReadAbi, playTokenWriteAbi } from "@/lib/playscript-onchain-abi";
 import { invalidatePlayBalance } from "@/hooks/use-play-balance";
@@ -238,15 +239,18 @@ function VaultDetailViewInner({ vaultAddress }: Props) {
     if (!address || !walletClient || !publicClient || !playToken) return;
     setBusy(true);
     try {
-      const hash = await walletClient.sendTransaction({
-        chain: somniaTestnet,
+      const hash = await sendWalletTx({
+        walletClient,
+        publicClient,
         account: address,
+        chain: somniaTestnet,
         to: playToken,
         data: encodeFunctionData({
           abi: playTokenWriteAbi,
           functionName: "approve",
           args: [vaultAddress, maxUint256],
         }),
+        fallbackGas: 120_000n,
       });
       await publicClient.waitForTransactionReceipt({ hash });
       setOk("PLAY approved for vault.");
@@ -279,9 +283,11 @@ function VaultDetailViewInner({ vaultAddress }: Props) {
     }
     setBusy(true);
     try {
-      const hash = await walletClient.sendTransaction({
-        chain: somniaTestnet,
+      const hash = await sendWalletTx({
+        walletClient,
+        publicClient,
         account: address,
+        chain: somniaTestnet,
         to: vaultAddress,
         data: encodeFunctionData({
           abi: playVaultWriteAbi,
@@ -327,9 +333,11 @@ function VaultDetailViewInner({ vaultAddress }: Props) {
     }
     setBusy(true);
     try {
-      const hash = await walletClient.sendTransaction({
-        chain: somniaTestnet,
+      const hash = await sendWalletTx({
+        walletClient,
+        publicClient,
         account: address,
+        chain: somniaTestnet,
         to: vaultAddress,
         data: encodeFunctionData({
           abi: playVaultWriteAbi,

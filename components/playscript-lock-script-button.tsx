@@ -7,6 +7,7 @@ import { useConnection, usePublicClient, useWalletClient } from "wagmi";
 
 import { invalidatePlayBalance, usePlayBalance } from "@/hooks/use-play-balance";
 import { somniaTestnet } from "@/lib/chains/somnia";
+import { sendWalletTx } from "@/lib/send-wallet-tx";
 import {
   playTokenReadAbi,
   playTokenWriteAbi,
@@ -96,22 +97,27 @@ export function PlayscriptLockScriptButton({
       });
 
       if (allowance < stakeWei) {
-        const hashA = await walletClient.sendTransaction({
-          chain: somniaTestnet,
+        const hashA = await sendWalletTx({
+          walletClient,
+          publicClient,
           account: address,
+          chain: somniaTestnet,
           to: playToken,
           data: encodeFunctionData({
             abi: playTokenWriteAbi,
             functionName: "approve",
             args: [playscriptCore, maxUint256],
           }),
+          fallbackGas: 120_000n,
         });
         await publicClient.waitForTransactionReceipt({ hash: hashA });
       }
 
-      const hashL = await walletClient.sendTransaction({
-        chain: somniaTestnet,
+      const hashL = await sendWalletTx({
+        walletClient,
+        publicClient,
         account: address,
+        chain: somniaTestnet,
         to: playscriptCore,
         data: encodeFunctionData({
           abi: playscriptCoreWriteAbi,

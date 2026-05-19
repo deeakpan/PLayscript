@@ -6,6 +6,7 @@ import { encodeFunctionData } from "viem";
 import { useConnection, usePublicClient, useWalletClient } from "wagmi";
 
 import { somniaTestnet } from "@/lib/chains/somnia";
+import { sendWalletTx } from "@/lib/send-wallet-tx";
 import { playscriptCoreWriteAbi } from "@/lib/playscript-onchain-abi";
 import { invalidatePlayBalance } from "@/hooks/use-play-balance";
 import { getPlayscriptClientEnv } from "@/lib/playscript-public-env";
@@ -52,9 +53,11 @@ export function PlayscriptClaimPayoutButton({ scriptId, disabled, compact, onSuc
 
     setBusy(true);
     try {
-      const hash = await walletClient.sendTransaction({
-        chain: somniaTestnet,
+      const hash = await sendWalletTx({
+        walletClient,
+        publicClient,
         account: address,
+        chain: somniaTestnet,
         to: contracts.playscriptCore,
         data: encodeFunctionData({
           abi: playscriptCoreWriteAbi,

@@ -3,9 +3,15 @@
 import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
+import { http } from "viem";
 import { WagmiProvider } from "wagmi";
 
 import { somniaTestnet } from "@/lib/chains/somnia";
+
+const somniaRpc =
+  process.env.NEXT_PUBLIC_SOMNIA_TESTNET_RPC_URL?.trim() ||
+  process.env.NEXT_PUBLIC_SOMNIA_RPC_TESTNET?.trim() ||
+  "https://api.infra.testnet.somnia.network";
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "";
 
@@ -28,6 +34,9 @@ const wagmiConfig = defaultWagmiConfig({
   auth: {
     email: false,
     socials: [],
+  },
+  transports: {
+    [somniaTestnet.id]: http(somniaRpc, { timeout: 60_000, retryCount: 2 }),
   },
   ssr: true,
 });

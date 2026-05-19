@@ -10,6 +10,7 @@ import { PlayStakeField } from "@/components/play-stake-field";
 import { invalidatePlayBalance } from "@/hooks/use-play-balance";
 import { FixturePlayscriptInlineSpinner } from "@/components/fixtures/fixture-playscript-inline-spinner";
 import { somniaTestnet } from "@/lib/chains/somnia";
+import { sendWalletTx } from "@/lib/send-wallet-tx";
 import type { ScriptSportKey } from "@/lib/fixtures-shared";
 import {
   getPlayscriptV2KernelEnv,
@@ -318,9 +319,11 @@ export function FixturePlayscriptV2Section({
         );
       }
 
-      const hash = await walletClient.sendTransaction({
-        chain: somniaTestnet,
+      const hash = await sendWalletTx({
+        walletClient,
+        publicClient,
         account: address,
+        chain: somniaTestnet,
         to: registerArgs.kernel,
         data: encodeFunctionData({
           abi: playscriptKernelWriteAbi,
@@ -415,22 +418,27 @@ export function FixturePlayscriptV2Section({
         lockQuote && lockQuote.actualStakeWei > BigInt(0) ? lockQuote.actualStakeWei : stakeWei;
 
       if (allowance < approveAmount) {
-        const hashA = await walletClient.sendTransaction({
-          chain: somniaTestnet,
+        const hashA = await sendWalletTx({
+          walletClient,
+          publicClient,
           account: address,
+          chain: somniaTestnet,
           to: positionsEnv.playToken,
           data: encodeFunctionData({
             abi: playTokenWriteAbi,
             functionName: "approve",
             args: [positionsEnv.positions, maxUint256],
           }),
+          fallbackGas: 120_000n,
         });
         await publicClient.waitForTransactionReceipt({ hash: hashA });
       }
 
-      const hashL = await walletClient.sendTransaction({
-        chain: somniaTestnet,
+      const hashL = await sendWalletTx({
+        walletClient,
+        publicClient,
         account: address,
+        chain: somniaTestnet,
         to: positionsEnv.positions,
         data: encodeFunctionData({
           abi: playscriptV2PositionsWriteAbi,
@@ -507,9 +515,11 @@ export function FixturePlayscriptV2Section({
 
     setBusy(true);
     try {
-      const hash = await walletClient.sendTransaction({
-        chain: somniaTestnet,
+      const hash = await sendWalletTx({
+        walletClient,
+        publicClient,
         account: address,
+        chain: somniaTestnet,
         to: positionsEnv.positions,
         data: encodeFunctionData({
           abi: playscriptV2PositionsWriteAbi,
