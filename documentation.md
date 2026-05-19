@@ -36,6 +36,18 @@ Living doc for **Somnia Agents** issues and fixes. Add sections as you discover 
 
 ---
 
+## PLAY faucet on Vercel
+
+**Symptom:** `ENOENT: no such file or directory, mkdir '/var/task/data'`.
+
+**Cause:** Faucet claim history was stored under `data/faucet-claims.json` in the project root; Vercel’s `/var/task` bundle is read-only.
+
+**Fix:** On Vercel/Lambda, claims file defaults to **`/tmp/playscript-faucet-claims.json`** plus an in-memory merge. Override with `FAUCET_DATA_PATH` if needed.
+
+**Note:** `/tmp` + memory only dedupes within a warm instance; for strict global daily limits across all regions/instances use **Vercel KV** / Redis (not bundled yet).
+
+---
+
 ## Reference — price oracle demos
 
 Root `scripts/` only ships **Playscript v2** deploy scripts. For Somnia agent deploy/invoke flows, use **`somnia-agents-examples/`** (e.g. `01-price-oracle/scripts/`).

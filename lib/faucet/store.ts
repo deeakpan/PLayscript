@@ -13,7 +13,21 @@ export type FaucetStoreFile = {
   claims: Record<string, FaucetClaimRecord>;
 };
 
-const DEFAULT_PATH = path.join(/* turbopackIgnore: true */ process.cwd(), "data", "faucet-claims.json");
+const LOCAL_PATH = path.join(/* turbopackIgnore: true */ process.cwd(), "data", "faucet-claims.json");
+/** Writable on Vercel / AWS Lambda (project dir under `/var/task` is read-only). */
+const SERVERLESS_PATH = "/tmp/playscript-faucet-claims.json";
+
+function isServerlessRuntime(): boolean {
+  return (
+    process.env.VERCEL === "1" ||
+    Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) ||
+    Boolean(process.env.VERCEL_ENV)
+  );
+}
+
+function defaultStorePath(): string {
+  return isServerlessRuntime() ? SERVERLESS_PATH : LOCAL_PATH;
+}
 
 declare global {
   // eslint-disable-next-line no-var
@@ -29,7 +43,7 @@ function memoryStore(): FaucetStoreFile {
 
 function storePath(): string {
   const custom = process.env.FAUCET_DATA_PATH?.trim();
-  return custom || DEFAULT_PATH;
+  return custom || defaultStorePath();
 }
 
 let writeChain: Promise<void> = Promise.resolve();
@@ -74,10 +88,18 @@ async function readStore(): Promise<FaucetStoreFile> {
 async function writeStore(store: FaucetStoreFile): Promise<void> {
   memoryStore().claims = { ...store.claims };
   const file = storePath();
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  const tmp = `${file}.tmp`;
-  await fs.writeFile(tmp, `${JSON.stringify(store, null, 2)}\n`, "utf8");
-  await fs.rename(tmp, file);
+  const dir = path.dirname(file);
+  if (dir !== "/tmp") {
+    await fs.mkdir(dir, { recursive: true });
+  }
+  const payload = `${JSON.stringify(store, null, 2)}\n`;
+  try {
+    const tmp = `${file}.tmp`;
+    await fs.writeFile(tmp, payload, "utf8");
+    await fs.rename(tmp, file);
+  } catch {
+    await fs.writeFile(file, payload, "utf8");
+  }
 }
 
 export type FaucetEligibility = {
