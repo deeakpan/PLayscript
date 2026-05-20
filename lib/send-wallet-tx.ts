@@ -55,39 +55,10 @@ async function estimateGasLimit(
   }
 }
 
-type FeeFields =
-  | { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
-  | { gasPrice: bigint }
-  | null;
-
-async function resolveFees(publicClient: PublicClient): Promise<FeeFields> {
-  try {
-    const fees = await publicClient.estimateFeesPerGas();
-    if (fees.maxFeePerGas != null) {
-      const maxFeePerGas = (fees.maxFeePerGas * BigInt(125)) / BigInt(100);
-      const maxPriorityFeePerGas =
-        fees.maxPriorityFeePerGas != null
-          ? (fees.maxPriorityFeePerGas * BigInt(125)) / BigInt(100)
-          : maxFeePerGas / BigInt(10);
-      return { maxFeePerGas, maxPriorityFeePerGas };
-    }
-    if (fees.gasPrice != null) {
-      return { gasPrice: (fees.gasPrice * BigInt(125)) / BigInt(100) };
-    }
-  } catch {
-    try {
-      const gasPrice = await publicClient.getGasPrice();
-      return { gasPrice: (gasPrice * BigInt(125)) / BigInt(100) };
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
-
 /**
- * Send a contract call with gas + fees estimated on our public RPC (not the wallet’s).
- * Fixes “cannot estimate gas” on mobile WalletConnect / in-app browsers.
+ * Send a contract call with an explicit `gas` limit from our RPC (buffered), but **no** gasPrice /
+ * maxFeePerGas overrides. Mobile wallets (WalletConnect / MM) often show a red “review” banner and
+ * disable Confirm when our fee fields disagree with their chain config or simulation path.
  */
 export async function sendWalletTx({
   walletClient,
@@ -104,21 +75,13 @@ export async function sendWalletTx({
     { account, to, data, value },
     fallbackGas,
   );
-  const fees = await resolveFees(publicClient);
-  const base = { chain, account, to, data, value, gas };
 
-  if (fees && "maxFeePerGas" in fees) {
-    return walletClient.sendTransaction({
-      ...base,
-      maxFeePerGas: fees.maxFeePerGas,
-      maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
-    });
-  }
-  if (fees && "gasPrice" in fees) {
-    return walletClient.sendTransaction({
-      ...base,
-      gasPrice: fees.gasPrice,
-    });
-  }
-  return walletClient.sendTransaction(base);
+  return walletClient.sendTransaction({
+    chain,
+    account,
+    to,
+    data,
+    value,
+    gas,
+  });
 }
